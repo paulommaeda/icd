@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 $notes = ICD_Visitas_Students::observations((int) $student->id);
-$post_url = admin_url('admin-post.php');
+$post_url = ICD_Visitas_Helpers::action_url();
 ?>
 <section class="icd-card icd-student-card" id="icd-observacoes">
     <h3>Histórico de observações</h3>

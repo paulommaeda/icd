@@ -25,7 +25,7 @@ $in_admin = false;
                 <dt>Pedagoga</dt><dd><?php echo esc_html($student->pedagoga ?? 'Sem vínculo'); ?></dd>
             </dl>
             <?php if (current_user_can('icd_visitas_manage_cadastros')): ?>
-                <a class="icd-edit-btn" href="<?php echo esc_url(ICD_Visitas_Students::admin_url($id) . '#icd-trocar-vinculos'); ?>">Trocar vínculos no painel</a>
+                <a class="icd-edit-btn" href="<?php echo esc_url(ICD_Visitas_Students::admin_url($id) . '#icd-trocar-vinculos'); ?>">Trocar vínculos</a>
             <?php endif; ?>
         </section>
         <?php if (($_GET['icd_status'] ?? '') === 'observacao'): ?>
@@ -40,13 +40,11 @@ $in_admin = false;
         <section class="icd-card">
             <h3>Alunos acompanhados</h3>
             <?php if (current_user_can('icd_visitas_manage_cadastros')): ?>
-                <p><a href="<?php echo esc_url(ICD_Visitas_Students::admin_url()); ?>">Gerenciar alunos no painel</a></p>
+                <p><a href="<?php echo esc_url(ICD_Visitas_Students::admin_url()); ?>">Gerenciar alunos</a></p>
             <?php endif; ?>
             <?php if (ICD_Visitas_Students::can_view_team()): ?><p><a href="#icd-equipe">Consultar equipe</a></p><?php endif; ?>
             <form class="icd-mobile-form" method="get" action="<?php echo esc_url($base_url); ?>">
-                <?php if (!get_option('permalink_structure')): ?>
-                    <input type="hidden" name="page_id" value="<?php echo (int) get_option('icd_visitas_students_page_id'); ?>">
-                <?php endif; ?>
+                <?php ICD_Visitas_Portal::route_input('alunos'); ?>
                 <label>Nome do aluno<input type="search" name="icd_busca" value="<?php echo esc_attr($search); ?>"></label>
                 <button type="submit" class="icd-submit">Buscar alunos</button>
                 <?php if ($search !== ''): ?><a href="<?php echo esc_url($base_url); ?>">Limpar busca</a><?php endif; ?>

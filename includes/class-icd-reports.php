@@ -2,8 +2,8 @@
 if(!defined('ABSPATH')) exit;
 class ICD_Visitas_Reports {
  public static function init(){
-  add_action('admin_post_icd_generate_visits_pdf',[__CLASS__,'generate_pdf']);
-  add_action('wp_ajax_icd_generate_visits_pdf_ajax',[__CLASS__,'generate_pdf_ajax']);
+  ICD_Visitas_Portal::register_action('icd_generate_visits_pdf',[__CLASS__,'generate_pdf']);
+  ICD_Visitas_Portal::register_action('icd_generate_visits_pdf_ajax',[__CLASS__,'generate_pdf_ajax'],true);
  }
  private static function valid_date($date,$fallback){ return preg_match('/^\d{4}-\d{2}-\d{2}$/',(string)$date)?$date:$fallback; }
  private static function filters_from_request($source){

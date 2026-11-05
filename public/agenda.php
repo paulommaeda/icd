@@ -38,21 +38,21 @@ $rows=$wpdb->get_results($wpdb->prepare("SELECT v.*,e.nome escola,
 
 <details class="icd-card icd-filter-card" <?php echo $edit?'open':'';?> id="icd-agenda-form">
  <summary><?php echo $edit?'Editar visita agendada':'+ Agendar nova visita';?><span>⌄</span></summary>
- <form class="icd-front-filters" method="post" action="<?php echo esc_url(admin_url('admin-post.php'));?>">
+ <form class="icd-front-filters" method="post" action="<?php echo esc_url(ICD_Visitas_Helpers::action_url());?>">
   <?php wp_nonce_field('icd_save_visita');?>
   <input type="hidden" name="action" value="icd_save_visita">
   <input type="hidden" name="id" value="<?php echo (int)($edit->id??0);?>">
   <input type="hidden" name="status" value="<?php echo esc_attr($edit->status??'programada');?>">
   <input type="hidden" name="tipo" value="acompanhamento">
   <input type="hidden" name="origem" value="agenda">
-  <input type="hidden" name="redirect_to" value="<?php echo esc_url(get_permalink());?>">
+  <input type="hidden" name="redirect_to" value="<?php echo esc_url(ICD_Visitas_Portal::url('agenda'));?>">
   <label>Escola<select required name="escola_id" id="icd-school"><option value="">Selecione</option><?php foreach($schools as $x) echo '<option value="'.$x->id.'" '.selected((int)($edit->escola_id??0),$x->id,false).'>'.esc_html($x->nome).'</option>';?></select></label>
   <div class="icd-two"><label>Data<input required type="date" name="data_visita" min="<?php echo esc_attr(current_time('Y-m-d'));?>" value="<?php echo esc_attr($edit->data_visita??current_time('Y-m-d'));?>"></label><label>Turno<select name="turno"><?php foreach(['manha'=>'Manhã','tarde'=>'Tarde','noite'=>'Noite','integral'=>'Integral'] as $k=>$lab) echo '<option value="'.$k.'" '.selected($edit->turno??'manha',$k,false).'>'.$lab.'</option>';?></select></label></div>
   <fieldset><legend>Pedagoga responsável</legend><?php foreach($peds as $x):$checked=$edit?in_array((int)$x->id,$editPeds,true):((int)$currentPed===(int)$x->id);?><label class="icd-check"><input type="checkbox" name="pedagogas[]" value="<?php echo (int)$x->id;?>" <?php checked($checked);?>> <?php echo esc_html($x->nome);?></label><?php endforeach;?></fieldset>
   <fieldset><legend>Mediadores que serão acompanhados</legend><small class="icd-help">Ao selecionar a escola, aparecem apenas os mediadores vinculados a ela.</small><?php foreach($meds as $x):$ids=implode(',',array_map('intval',$map[$x->id]??[]));?><label class="icd-check icd-mediator-option" data-schools="<?php echo esc_attr($ids);?>"><input type="checkbox" name="mediadores[]" value="<?php echo (int)$x->id;?>" <?php checked(in_array((int)$x->id,$editMeds,true));?>> <?php echo esc_html($x->nome);?></label><?php endforeach;?></fieldset>
   <label>Observações<textarea name="observacoes" rows="4" placeholder="Alguma orientação ou objetivo específico para esta visita?"><?php echo esc_textarea($edit->observacoes??'');?></textarea></label>
   <button class="icd-submit" type="submit"><?php echo $edit?'Salvar alterações':'Agendar visita';?></button>
-  <?php if($edit):?><a class="icd-secondary-link" href="<?php echo esc_url(get_permalink());?>">Cancelar edição</a><?php endif;?>
+  <?php if($edit):?><a class="icd-secondary-link" href="<?php echo esc_url(ICD_Visitas_Portal::url('agenda'));?>">Cancelar edição</a><?php endif;?>
  </form>
 </details>
 
@@ -66,8 +66,8 @@ $rows=$wpdb->get_results($wpdb->prepare("SELECT v.*,e.nome escola,
  <?php if($r->observacoes):?><p><?php echo esc_html($r->observacoes);?></p><?php endif;?>
  <div class="icd-agenda-actions">
   <button type="button" class="icd-done-btn icd-complete-visit-open" data-visit-id="<?php echo (int)$r->id;?>" data-visit-school="<?php echo esc_attr($r->escola);?>" data-visit-date="<?php echo esc_attr(date_i18n('d/m/Y',strtotime($r->data_visita)));?>" data-visit-notes="<?php echo esc_attr($r->observacoes??'');?>" data-visit-nonce="<?php echo esc_attr(wp_create_nonce('icd_complete_visita_'.$r->id));?>">Visita realizada</button>
-  <a class="icd-edit-btn" href="<?php echo esc_url(add_query_arg('editar',(int)$r->id,get_permalink()));?>#icd-agenda-form">Editar</a>
-  <form method="post" action="<?php echo esc_url(admin_url('admin-post.php'));?>" onsubmit="return confirm('Deseja realmente excluir esta visita?');"><?php wp_nonce_field('icd_delete_visita_'.$r->id);?><input type="hidden" name="action" value="icd_delete_visita"><input type="hidden" name="id" value="<?php echo (int)$r->id;?>"><input type="hidden" name="redirect_to" value="<?php echo esc_url(get_permalink());?>"><button type="submit" class="icd-delete-btn">Excluir</button></form>
+  <a class="icd-edit-btn" href="<?php echo esc_url(add_query_arg('editar',(int)$r->id,ICD_Visitas_Portal::url('agenda')));?>#icd-agenda-form">Editar</a>
+  <form method="post" action="<?php echo esc_url(ICD_Visitas_Helpers::action_url());?>" onsubmit="return confirm('Deseja realmente excluir esta visita?');"><?php wp_nonce_field('icd_delete_visita_'.$r->id);?><input type="hidden" name="action" value="icd_delete_visita"><input type="hidden" name="id" value="<?php echo (int)$r->id;?>"><input type="hidden" name="redirect_to" value="<?php echo esc_url(ICD_Visitas_Portal::url('agenda'));?>"><button type="submit" class="icd-delete-btn">Excluir</button></form>
  </div>
 </article>
 <?php endforeach;?>
@@ -80,11 +80,11 @@ $rows=$wpdb->get_results($wpdb->prepare("SELECT v.*,e.nome escola,
    <h3 id="icd-complete-visit-title">Visita realizada</h3>
    <p id="icd-complete-visit-context"></p>
   </div>
-  <form method="post" action="<?php echo esc_url(admin_url('admin-post.php'));?>" id="icd-complete-visit-form" class="icd-mobile-form">
+  <form method="post" action="<?php echo esc_url(ICD_Visitas_Helpers::action_url());?>" id="icd-complete-visit-form" class="icd-mobile-form">
    <input type="hidden" name="action" value="icd_complete_visita">
    <input type="hidden" name="id" id="icd-complete-visit-id" value="">
    <input type="hidden" name="_wpnonce" id="icd-complete-visit-nonce" value="">
-   <input type="hidden" name="redirect_to" value="<?php echo esc_url(get_permalink());?>">
+   <input type="hidden" name="redirect_to" value="<?php echo esc_url(ICD_Visitas_Portal::url('agenda'));?>">
    <div class="icd-observation-prompt">Antes de concluir, aproveite para registrar o que foi observado na escola. Isso evita precisar editar a visita depois.</div>
    <label>Observações da visita
     <textarea name="observacoes" id="icd-complete-visit-notes" rows="7" placeholder="Ex.: andamento do trabalho dos mediadores, orientações realizadas, pontos de atenção e encaminhamentos."></textarea>

@@ -7,7 +7,7 @@ $student = $id ? ICD_Visitas_Students::find($id) : null;
 $manage = current_user_can('icd_visitas_manage_cadastros');
 $in_admin = true;
 $base_url = ICD_Visitas_Students::admin_url();
-$post_url = admin_url('admin-post.php');
+$post_url = ICD_Visitas_Helpers::action_url();
 $search = sanitize_text_field(wp_unslash($_GET['icd_busca'] ?? ''));
 $messages = ['salvo' => 'Cadastro salvo.', 'vinculos' => 'Vínculos atualizados.', 'observacao' => 'Observação registrada.'];
 $message = $messages[sanitize_key($_GET['icd_status'] ?? '')] ?? '';
@@ -72,8 +72,8 @@ if ($manage && (!$id || $student)) {
             </details>
         <?php endif; ?>
         <p><a href="<?php echo esc_url(ICD_Visitas_Public::students_url() . '#icd-equipe'); ?>">Consultar equipe no portal</a></p>
-        <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>" class="icd-student-search">
-            <input type="hidden" name="page" value="icd-visitas-alunos">
+        <form method="get" action="<?php echo esc_url(ICD_Visitas_Helpers::page_url('icd-visitas-alunos')); ?>" class="icd-student-search">
+            <?php ICD_Visitas_Helpers::page_input('icd-visitas-alunos'); ?>
             <label for="icd-busca-aluno">Nome do aluno</label>
             <input type="search" name="icd_busca" id="icd-busca-aluno" value="<?php echo esc_attr($search); ?>">
             <button type="submit" class="button">Buscar</button>

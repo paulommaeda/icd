@@ -3,30 +3,67 @@ if(!defined('ABSPATH')) exit;
 class ICD_Visitas_Admin {
  public static function init(){
   add_action('admin_menu',[__CLASS__,'menu']); add_action('admin_enqueue_scripts',[__CLASS__,'assets']);
-  foreach(['municipio','escola','mediador','pedagoga','vinculo','agenda','visita','responsavel'] as $a) add_action('admin_post_icd_save_'.$a,[__CLASS__,'save_'.$a]);
-  add_action('admin_post_icd_import_preview',[__CLASS__,'import_preview']); add_action('admin_post_icd_import_confirm',[__CLASS__,'import_confirm']);
-  add_action('admin_post_icd_smart_import_upload',[__CLASS__,'smart_import_upload']); add_action('admin_post_icd_smart_import_type',[__CLASS__,'smart_import_type']); add_action('admin_post_icd_smart_import_map',[__CLASS__,'smart_import_map']); add_action('admin_post_icd_smart_import_confirm',[__CLASS__,'smart_import_confirm']); add_action('admin_post_icd_smart_import_reset',[__CLASS__,'smart_import_reset']);
-  add_action('admin_post_icd_complete_visita',[__CLASS__,'complete_visita']); add_action('admin_post_icd_delete_visita',[__CLASS__,'delete_visita']);
-  add_action('admin_post_icd_transfer_mediador',[__CLASS__,'transfer_mediador']);
-  add_action('wp_ajax_icd_school_calendar',[__CLASS__,'school_calendar']);
-  add_action('wp_ajax_icd_visit_details',[__CLASS__,'visit_details']);
+  foreach (['municipio','escola','mediador','pedagoga','vinculo','agenda','visita','responsavel'] as $name) {
+   ICD_Visitas_Portal::register_action('icd_save_' . $name, [__CLASS__, 'save_' . $name]);
+  }
+  foreach (['import_preview','import_confirm','smart_import_upload','smart_import_type','smart_import_map','smart_import_confirm',
+   'smart_import_reset','complete_visita','delete_visita','transfer_mediador','save_access'] as $action) {
+   ICD_Visitas_Portal::register_action('icd_' . $action, [__CLASS__, $action]);
+  }
+  ICD_Visitas_Portal::register_action('icd_school_calendar', [__CLASS__, 'school_calendar'], true);
+  ICD_Visitas_Portal::register_action('icd_visit_details', [__CLASS__, 'visit_details'], true);
  }
- public static function menu(){
-  $cap='icd_visitas_view_dashboard';
-  add_menu_page('Instituto Caminho de Davi - Visitas','ICD Visitas',$cap,'icd-visitas',[__CLASS__,'dashboard'],'dashicons-location-alt',26);
-  add_submenu_page('icd-visitas','Dashboard','Dashboard',$cap,'icd-visitas',[__CLASS__,'dashboard']);
-  add_submenu_page('icd-visitas','Visitas','Visitas','icd_visitas_manage_visitas','icd-visitas-registros',[__CLASS__,'visitas']);
-  add_submenu_page('icd-visitas','Agenda dos mediadores','Agenda dos mediadores','icd_visitas_manage_cadastros','icd-visitas-agenda',[__CLASS__,'agenda']);
-  add_submenu_page('icd-visitas','Escolas','Escolas','icd_visitas_manage_cadastros','icd-visitas-escolas',[__CLASS__,'escolas']);
-  add_submenu_page('icd-visitas','Mediadores','Mediadores','icd_visitas_manage_cadastros','icd-visitas-mediadores',[__CLASS__,'mediadores']);
-  add_submenu_page('icd-visitas','Alunos','Alunos','icd_visitas_view_all_students','icd-visitas-alunos',[__CLASS__,'alunos']);
-  add_submenu_page('icd-visitas','Pedagogas','Pedagogas','icd_visitas_manage_cadastros','icd-visitas-pedagogas',[__CLASS__,'pedagogas']);
-  add_submenu_page('icd-visitas','Vínculos','Vínculos','icd_visitas_manage_cadastros','icd-visitas-vinculos',[__CLASS__,'vinculos']);
-  add_submenu_page('icd-visitas','Responsáveis','Responsáveis','icd_visitas_manage_cadastros','icd-visitas-responsaveis',[__CLASS__,'responsaveis']);
-  add_submenu_page('icd-visitas','Municípios','Municípios','icd_visitas_manage_cadastros','icd-visitas-municipios',[__CLASS__,'municipios']);
-  add_submenu_page('icd-visitas','Importação','Importação','icd_visitas_manage_settings','icd-visitas-importacao',[__CLASS__,'importacao']);
+
+ private static function pages() {
+  $cadastros = 'icd_visitas_manage_cadastros';
+  return [
+   'icd-visitas' => ['Visão geral', 'icd_visitas_view_dashboard', 'dashboard'],
+   'icd-visitas-registros' => ['Visitas', 'icd_visitas_manage_visitas', 'visitas'],
+   'icd-visitas-agenda' => ['Agenda dos mediadores', $cadastros, 'agenda'],
+   'icd-visitas-escolas' => ['Escolas', $cadastros, 'escolas'],
+   'icd-visitas-mediadores' => ['Mediadores', $cadastros, 'mediadores'],
+   'icd-visitas-alunos' => ['Alunos', 'icd_visitas_view_all_students', 'alunos'],
+   'icd-visitas-pedagogas' => ['Pedagogas', $cadastros, 'pedagogas'],
+   'icd-visitas-vinculos' => ['Vínculos', $cadastros, 'vinculos'],
+   'icd-visitas-responsaveis' => ['Responsáveis', $cadastros, 'responsaveis'],
+   'icd-visitas-municipios' => ['Municípios', $cadastros, 'municipios'],
+   'icd-visitas-importacao' => ['Importação', 'icd_visitas_manage_settings', 'importacao'],
+   'icd-visitas-acessos' => ['Acessos', 'promote_users', 'access'],
+  ];
  }
- public static function assets($hook){ if(strpos($hook,'icd-visitas')===false) return; wp_enqueue_style('icd-visitas-admin',ICD_VISITAS_URL.'admin/css/admin.css',[],ICD_VISITAS_VERSION); wp_enqueue_script('icd-visitas-admin',ICD_VISITAS_URL.'admin/js/admin.js',[],ICD_VISITAS_VERSION,true); wp_localize_script('icd-visitas-admin','ICDVisitasAdmin',['ajaxurl'=>admin_url('admin-ajax.php'),'calendarNonce'=>wp_create_nonce('icd_school_calendar')]); }
+
+ public static function available_pages() {
+  $pages = array_filter(self::pages(), static function ($page) {
+   if ($page[2] === 'access' && !ICD_Visitas_Portal::is_wordpress_admin()) return false;
+   return current_user_can($page[1]);
+  });
+  // Um perfil de consulta usa o portal de alunos e relatórios sem um menu de cadastros.
+  if (!current_user_can('icd_visitas_manage_visitas') && !current_user_can('icd_visitas_manage_cadastros')
+   && !current_user_can('icd_visitas_manage_settings') && !ICD_Visitas_Portal::is_wordpress_admin()) return [];
+  return $pages;
+ }
+
+ public static function menu() {
+  if (!ICD_Visitas_Portal::is_wordpress_admin()) return;
+  add_menu_page('Instituto Caminho de Davi - Visitas', 'ICD Visitas', 'icd_visitas_view_dashboard', 'icd-visitas',
+   [__CLASS__, 'dashboard'], 'dashicons-location-alt', 26);
+  foreach (self::pages() as $slug => $page) {
+   add_submenu_page('icd-visitas', $page[0], $page[0], $page[1], $slug, [__CLASS__, $page[2]]);
+  }
+ }
+
+ public static function assets($hook) {
+  if (strpos($hook, 'icd-visitas') !== false) self::enqueue_assets();
+ }
+
+ public static function enqueue_assets() {
+  wp_enqueue_style('icd-visitas-admin', ICD_VISITAS_URL . 'admin/css/admin.css', [], ICD_VISITAS_VERSION);
+  wp_enqueue_script('icd-visitas-admin', ICD_VISITAS_URL . 'admin/js/admin.js', [], ICD_VISITAS_VERSION, true);
+  wp_localize_script('icd-visitas-admin', 'ICDVisitasAdmin', [
+   'ajaxurl' => is_admin() ? admin_url('admin-ajax.php') : ICD_Visitas_Portal::url('ajax'),
+   'calendarNonce' => wp_create_nonce('icd_school_calendar'),
+  ]);
+ }
  public static function dashboard(){ require ICD_VISITAS_DIR.'admin/pages/dashboard.php'; }
  public static function visitas(){ require ICD_VISITAS_DIR.'admin/pages/visitas.php'; }
  public static function agenda(){ require ICD_VISITAS_DIR.'admin/pages/agenda.php'; }
@@ -38,7 +75,52 @@ class ICD_Visitas_Admin {
  public static function responsaveis(){ require ICD_VISITAS_DIR.'admin/pages/responsaveis.php'; }
  public static function municipios(){ require ICD_VISITAS_DIR.'admin/pages/municipios.php'; }
  public static function importacao(){ require ICD_VISITAS_DIR.'admin/pages/importacao.php'; }
- private static function allow($cap,$nonce){ if(!current_user_can($cap)||!check_admin_referer($nonce)) wp_die('Acesso negado.'); }
+ public static function access(){ require ICD_VISITAS_DIR.'admin/pages/acessos.php'; }
+ public static function access_roles() {
+  return [
+   'icd_coordenador' => 'Coordenador ICD', 'icd_pedagoga' => 'Pedagoga ICD',
+   'icd_mediador' => 'Mediador ICD', 'icd_direcao' => 'Direção ICD', 'icd_consulta' => 'Consulta ICD',
+  ];
+ }
+ public static function save_access() {
+  if (!ICD_Visitas_Portal::is_wordpress_admin()) wp_die('Acesso negado.', '', ['response' => 403]);
+  self::allow('promote_users', 'icd_save_access');
+  $mode = sanitize_key($_POST['icd_modo'] ?? '');
+  $role = sanitize_key($_POST['perfil'] ?? '');
+  $roles = self::access_roles();
+  if (!isset($roles[$role]) && !($mode === 'atribuir' && $role === 'remover')) {
+   wp_die('Selecione um perfil ICD válido.', '', ['response' => 400]);
+  }
+  if ($mode === 'criar') {
+   if (!current_user_can('create_users')) wp_die('Acesso negado.', '', ['response' => 403]);
+   $name = sanitize_text_field(wp_unslash($_POST['nome'] ?? ''));
+   $login = sanitize_user(sanitize_text_field(wp_unslash($_POST['login'] ?? '')), true);
+   $email = sanitize_email(sanitize_text_field(wp_unslash($_POST['email'] ?? '')));
+   $password = wp_unslash($_POST['senha'] ?? '');
+   if (!$name || !$login || !is_email($email) || !is_string($password) || strlen($password) < 8) {
+    wp_die('Informe nome, usuário, e-mail e uma senha com pelo menos 8 caracteres.', '', ['response' => 400]);
+   }
+   $result = wp_insert_user(['user_login' => $login, 'user_email' => $email, 'user_pass' => $password,
+    'display_name' => $name, 'role' => $role]);
+   if (is_wp_error($result)) wp_die(esc_html($result->get_error_message()), '', ['response' => 400]);
+  } elseif ($mode === 'atribuir') {
+   $user = get_userdata(ICD_Visitas_Helpers::id_from($_POST, 'usuario'));
+   if (!$user || ICD_Visitas_Portal::is_wordpress_admin($user) || !current_user_can('promote_user', $user->ID)) {
+    wp_die('A conta selecionada não pode ser alterada nesta tela.', '', ['response' => 403]);
+   }
+   if (isset($roles[$role])) $user->add_role($role);
+   foreach (array_intersect(array_keys($roles), $user->roles) as $previous) {
+    if ($previous !== $role) $user->remove_role($previous);
+   }
+  } else {
+   wp_die('Operação inválida.', '', ['response' => 400]);
+  }
+  ICD_Visitas_Helpers::redirect('icd-visitas-acessos', ['saved' => 1]);
+ }
+ private static function allow($cap,$nonce){
+  if(!current_user_can($cap)) wp_die('Acesso negado.', '', ['response' => 403]);
+  check_admin_referer($nonce);
+ }
  public static function save_municipio(){ self::allow('icd_visitas_manage_cadastros','icd_save_municipio'); global $wpdb; $id=absint($_POST['id']??0); $d=['nome'=>sanitize_text_field($_POST['nome']??''),'uf'=>strtoupper(substr(sanitize_text_field($_POST['uf']??'PR'),0,2)),'ativo'=>isset($_POST['ativo'])?1:0,'updated_at'=>current_time('mysql')]; if($id)$wpdb->update(ICD_Visitas_Database::table('municipios'),$d,['id'=>$id]); else{$d['created_at']=current_time('mysql');$d['ativo']=1;$wpdb->insert(ICD_Visitas_Database::table('municipios'),$d);$id=$wpdb->insert_id;} ICD_Visitas_Helpers::log('municipio',$id,'salvar',$d); ICD_Visitas_Helpers::redirect('icd-visitas-municipios',['saved'=>1]); }
  public static function save_escola(){ self::allow('icd_visitas_manage_cadastros','icd_save_escola'); global $wpdb; $id=absint($_POST['id']??0); $d=['nome'=>sanitize_text_field($_POST['nome']??''),'municipio_id'=>absint($_POST['municipio_id']??0)?:null,'endereco'=>sanitize_text_field($_POST['endereco']??''),'numero'=>sanitize_text_field($_POST['numero']??''),'bairro'=>sanitize_text_field($_POST['bairro']??''),'cep'=>sanitize_text_field($_POST['cep']??''),'telefone'=>sanitize_text_field($_POST['telefone']??''),'email'=>sanitize_email($_POST['email']??''),'meta_visitas_semana'=>($_POST['meta_visitas_semana']??'')!==''?(float)str_replace(',','.',$_POST['meta_visitas_semana']):null,'observacoes'=>sanitize_textarea_field($_POST['observacoes']??''),'ativo'=>isset($_POST['ativo'])?1:0,'updated_at'=>current_time('mysql')]; if($id)$wpdb->update(ICD_Visitas_Database::table('escolas'),$d,['id'=>$id]); else{$d['created_at']=current_time('mysql');$d['ativo']=1;$wpdb->insert(ICD_Visitas_Database::table('escolas'),$d);$id=$wpdb->insert_id;} ICD_Visitas_Helpers::log('escola',$id,'salvar',$d); ICD_Visitas_Helpers::redirect('icd-visitas-escolas',['saved'=>1]); }
  private static function pedagoga_available($id) {
@@ -109,8 +191,8 @@ class ICD_Visitas_Admin {
   $wpdb->delete(ICD_Visitas_Database::table('participantes'),['visita_id'=>$id]); foreach(array_map('absint',(array)($_POST['mediadores']??[])) as $mid) if($mid)$wpdb->insert(ICD_Visitas_Database::table('participantes'),['visita_id'=>$id,'mediador_id'=>$mid,'presente'=>1]);
   $wpdb->delete(ICD_Visitas_Database::table('visita_pedagogas'),['visita_id'=>$id]); foreach(array_map('absint',(array)($_POST['pedagogas']??[])) as $pid) if($pid)$wpdb->insert(ICD_Visitas_Database::table('visita_pedagogas'),['visita_id'=>$id,'pedagoga_id'=>$pid]);
   ICD_Visitas_Helpers::log('visita',$id,'salvar',$d);
-  $redirect=!empty($_POST['redirect_to'])?esc_url_raw(wp_unslash($_POST['redirect_to'])):wp_get_referer();
-  if($redirect && strpos($redirect,'wp-admin')===false){ wp_safe_redirect(add_query_arg($id&&isset($_POST['id'])&&absint($_POST['id'])?'updated':'saved','1',$redirect)); exit; }
+  $redirect=esc_url_raw(wp_unslash($_POST['redirect_to']??''));
+  if($redirect){ wp_safe_redirect(add_query_arg($id&&isset($_POST['id'])&&absint($_POST['id'])?'updated':'saved','1',$redirect)); exit; }
   ICD_Visitas_Helpers::redirect('icd-visitas-registros',['saved'=>1]);
  }
  public static function complete_visita(){
@@ -120,7 +202,7 @@ class ICD_Visitas_Admin {
   $data=['status'=>'realizada','observacoes'=>$observacoes,'updated_at'=>current_time('mysql')];
   $wpdb->update(ICD_Visitas_Database::table('visitas'),$data,['id'=>$id]);
   ICD_Visitas_Helpers::log('visita',$id,'marcar_realizada',['status'=>'realizada','observacoes'=>$observacoes]);
-  $redirect=!empty($_POST['redirect_to'])?esc_url_raw(wp_unslash($_POST['redirect_to'])):wp_get_referer(); wp_safe_redirect(add_query_arg('done','1',$redirect?:home_url('/'))); exit;
+  $redirect=!empty($_POST['redirect_to'])?esc_url_raw(wp_unslash($_POST['redirect_to'])):wp_get_referer(); wp_safe_redirect(add_query_arg('done','1',$redirect?:ICD_Visitas_Portal::url())); exit;
  }
  public static function delete_visita(){
   if(!current_user_can('icd_visitas_manage_visitas')) wp_die('Acesso negado.'); global $wpdb; $id=absint($_POST['id']??0); check_admin_referer('icd_delete_visita_'.$id);
@@ -128,7 +210,7 @@ class ICD_Visitas_Admin {
   $row=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.ICD_Visitas_Database::table('visitas').' WHERE id=%d',$id),ARRAY_A);
   $wpdb->delete(ICD_Visitas_Database::table('participantes'),['visita_id'=>$id]); $wpdb->delete(ICD_Visitas_Database::table('visita_pedagogas'),['visita_id'=>$id]); $wpdb->delete(ICD_Visitas_Database::table('visitas'),['id'=>$id]);
   ICD_Visitas_Helpers::log('visita',$id,'excluir',$row?:[]);
-  $redirect=!empty($_POST['redirect_to'])?esc_url_raw(wp_unslash($_POST['redirect_to'])):wp_get_referer(); wp_safe_redirect(add_query_arg('deleted','1',$redirect?:home_url('/'))); exit;
+  $redirect=!empty($_POST['redirect_to'])?esc_url_raw(wp_unslash($_POST['redirect_to'])):wp_get_referer(); wp_safe_redirect(add_query_arg('deleted','1',$redirect?:ICD_Visitas_Portal::url())); exit;
  }
 
  public static function visit_details(){
@@ -138,7 +220,7 @@ class ICD_Visitas_Admin {
   $tv=ICD_Visitas_Database::table('visitas'); $te=ICD_Visitas_Database::table('escolas'); $tm=ICD_Visitas_Database::table('mediadores'); $tp=ICD_Visitas_Database::table('participantes'); $tpg=ICD_Visitas_Database::table('pedagogas'); $tvp=ICD_Visitas_Database::table('visita_pedagogas');
   $r=$wpdb->get_row($wpdb->prepare("SELECT v.id,v.data_visita,v.turno,v.status,v.observacoes,e.nome escola,(SELECT GROUP_CONCAT(m.nome SEPARATOR ', ') FROM $tp p JOIN $tm m ON m.id=p.mediador_id WHERE p.visita_id=v.id) mediadores,(SELECT GROUP_CONCAT(pg.nome SEPARATOR ', ') FROM $tvp vp JOIN $tpg pg ON pg.id=vp.pedagoga_id WHERE vp.visita_id=v.id) pedagogas FROM $tv v JOIN $te e ON e.id=v.escola_id WHERE v.id=%d",$id));
   if(!$r) wp_send_json_error(['message'=>'Visita não encontrada.'],404);
-  wp_send_json_success(['id'=>(int)$r->id,'data'=>date_i18n('d/m/Y',strtotime($r->data_visita)),'escola'=>$r->escola,'turno'=>ICD_Visitas_Helpers::turno_label($r->turno),'status'=>ICD_Visitas_Helpers::status_label($r->status),'mediadores'=>$r->mediadores?:'Não informados','pedagogas'=>$r->pedagogas?:'Não informada','observacoes'=>$r->observacoes?:'Nenhuma observação registrada.','front_edit_url'=>add_query_arg('editar',(int)$r->id,site_url('/nova-visita/'))]);
+  wp_send_json_success(['id'=>(int)$r->id,'data'=>date_i18n('d/m/Y',strtotime($r->data_visita)),'escola'=>$r->escola,'turno'=>ICD_Visitas_Helpers::turno_label($r->turno),'status'=>ICD_Visitas_Helpers::status_label($r->status),'mediadores'=>$r->mediadores?:'Não informados','pedagogas'=>$r->pedagogas?:'Não informada','observacoes'=>$r->observacoes?:'Nenhuma observação registrada.','front_edit_url'=>add_query_arg('editar',(int)$r->id,ICD_Visitas_Portal::url('nova-visita'))]);
  }
 
  public static function school_calendar(){
@@ -151,7 +233,7 @@ class ICD_Visitas_Admin {
   if(!preg_match('/^\d{4}-\d{2}$/',$month)){ $last=$wpdb->get_var($wpdb->prepare("SELECT MAX(data_visita) FROM $tv WHERE escola_id=%d",$school_id)); $month=$last?substr($last,0,7):current_time('Y-m'); }
   $start=$month.'-01'; $end=date('Y-m-t',strtotime($start));
   $rows=$wpdb->get_results($wpdb->prepare("SELECT v.id,v.data_visita,v.turno,v.status,v.observacoes,(SELECT GROUP_CONCAT(m.nome SEPARATOR ', ') FROM $tp p JOIN $tm m ON m.id=p.mediador_id WHERE p.visita_id=v.id) mediadores,(SELECT GROUP_CONCAT(pg.nome SEPARATOR ', ') FROM $tvp vp JOIN $tpg pg ON pg.id=vp.pedagoga_id WHERE vp.visita_id=v.id) pedagogas FROM $tv v WHERE v.escola_id=%d AND v.data_visita BETWEEN %s AND %s ORDER BY v.data_visita,v.id",$school_id,$start,$end));
-  $days=[]; foreach($rows as $r){ $day=(int)substr($r->data_visita,8,2); if(!isset($days[$day]))$days[$day]=[]; $days[$day][]= ['id'=>(int)$r->id,'date'=>$r->data_visita,'turno'=>ICD_Visitas_Helpers::turno_label($r->turno),'status'=>ICD_Visitas_Helpers::status_label($r->status),'status_key'=>$r->status,'observacoes'=>$r->observacoes,'mediadores'=>$r->mediadores?:'—','pedagogas'=>$r->pedagogas?:'—','edit_url'=>admin_url('admin.php?page=icd-visitas-registros&edit='.(int)$r->id),'front_edit_url'=>add_query_arg('editar',(int)$r->id,site_url('/nova-visita/'))]; }
+  $days=[]; foreach($rows as $r){ $day=(int)substr($r->data_visita,8,2); if(!isset($days[$day]))$days[$day]=[]; $days[$day][]= ['id'=>(int)$r->id,'date'=>$r->data_visita,'turno'=>ICD_Visitas_Helpers::turno_label($r->turno),'status'=>ICD_Visitas_Helpers::status_label($r->status),'status_key'=>$r->status,'observacoes'=>$r->observacoes,'mediadores'=>$r->mediadores?:'—','pedagogas'=>$r->pedagogas?:'—','edit_url'=>ICD_Visitas_Helpers::page_url('icd-visitas-registros', ['edit' => (int) $r->id]),'front_edit_url'=>add_query_arg('editar',(int)$r->id,ICD_Visitas_Portal::url('nova-visita'))]; }
   wp_send_json_success(['school'=>['id'=>(int)$school->id,'name'=>$school->nome],'month'=>$month,'label'=>date_i18n('F \d\e Y',strtotime($start)),'firstWeekday'=>(int)date('w',strtotime($start)),'daysInMonth'=>(int)date('t',strtotime($start)),'visits'=>$days]);
  }
 
@@ -161,7 +243,9 @@ class ICD_Visitas_Admin {
  private static function smart_import_key(){ return 'icd_visitas_smart_import_'.get_current_user_id(); }
  private static function smart_import_state(){ $s=get_transient(self::smart_import_key()); return is_array($s)?$s:[]; }
  private static function smart_import_save_state($s){ set_transient(self::smart_import_key(),$s,HOUR_IN_SECONDS); }
- private static function smart_import_redirect($step='upload',$args=[]){ $args=array_merge(['page'=>'icd-visitas-importacao','smart_step'=>$step],$args); wp_safe_redirect(add_query_arg($args,admin_url('admin.php'))); exit; }
+ private static function smart_import_redirect($step='upload',$args=[]){
+  ICD_Visitas_Helpers::redirect('icd-visitas-importacao', ['smart_step' => $step] + $args);
+ }
  public static function smart_import_upload(){
   self::allow('icd_visitas_manage_settings','icd_smart_import_upload');
   if(empty($_FILES['arquivo']['tmp_name'])) wp_die('Selecione um arquivo XLSX.');

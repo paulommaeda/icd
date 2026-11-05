@@ -8,7 +8,7 @@ $entities=ICD_Visitas_Importer::smart_entities();
 $smartResult=get_transient('icd_visitas_smart_import_result_'.$uid); if($smartResult) delete_transient('icd_visitas_smart_import_result_'.$uid);
 $legacyPreview=get_transient('icd_visitas_import_preview_'.$uid);$legacyResult=get_transient('icd_visitas_import_result_'.$uid);if($legacyResult)delete_transient('icd_visitas_import_result_'.$uid);
 $error=''; if(!empty($_GET['smart_error']))$error=rawurldecode(sanitize_text_field(wp_unslash($_GET['smart_error'])));
-$action=admin_url('admin-post.php');
+$action=ICD_Visitas_Helpers::action_url();
 function icd_imp_form_open($actionUrl,$nonce,$actionName,$class=''){
  echo '<form method="post" class="'.esc_attr($class).'" action="'.esc_url($actionUrl).'">'; wp_nonce_field($nonce); echo '<input type="hidden" name="action" value="'.esc_attr($actionName).'">';
 }
@@ -74,7 +74,7 @@ function icd_imp_form_open($actionUrl,$nonce,$actionName,$class=''){
      <label><strong>Se o cadastro já existir</strong><select name="duplicate_action"><option value="update">Atualizar com os dados do XLSX</option><option value="skip">Ignorar a linha</option></select></label>
      <?php if(in_array($entity,['visita','mediador'],true)):?><label class="icd-check"><input type="checkbox" name="create_related" value="1" checked><span><strong>Criar relacionados ausentes</strong><small><?php echo $entity==='visita'?'Cria escola, pedagoga e mediador caso o nome ainda não exista.':'Se a coluna Escola estiver mapeada, cria a escola e o vínculo quando necessário.';?></small></span></label><?php endif;?>
     </div>
-    <div class="icd-import-actions"><a class="button" href="<?php echo esc_url(add_query_arg(['page'=>'icd-visitas-importacao','smart_step'=>'tipo'],admin_url('admin.php')));?>">Voltar</a><button class="button button-primary button-hero">Validar e ver prévia</button></div>
+    <div class="icd-import-actions"><a class="button" href="<?php echo esc_url(ICD_Visitas_Helpers::page_url('icd-visitas-importacao', ['smart_step' => 'tipo']));?>">Voltar</a><button class="button button-primary button-hero">Validar e ver prévia</button></div>
    </form>
   </div>
  <?php elseif($step==='confirmar'&&!empty($state['preview'])): $p=$state['preview'];?>
@@ -85,12 +85,12 @@ function icd_imp_form_open($actionUrl,$nonce,$actionName,$class=''){
    <div class="icd-table-wrap"><table class="widefat striped icd-preview-table"><thead><tr><th>Linha</th><?php foreach($entities[$state['entity']]['fields'] as $f=>$meta):if(empty($state['mapping'][$f]))continue;?><th><?php echo esc_html($meta['label']);?></th><?php endforeach;?><th>Validação</th></tr></thead><tbody>
     <?php foreach($p['rows'] as $row):?><tr><td><?php echo (int)$row['row'];?></td><?php foreach($entities[$state['entity']]['fields'] as $f=>$meta):if(empty($state['mapping'][$f]))continue;?><td><?php echo esc_html(wp_html_excerpt((string)($row['data'][$f]??''),90,'…'));?></td><?php endforeach;?><td><?php if($row['errors']):?><span class="icd-import-badge error">Erro</span><small><?php echo esc_html(implode(' ',$row['errors']));?></small><?php elseif($row['warnings']):?><span class="icd-import-badge warn">Aviso</span><small><?php echo esc_html(implode(' ',$row['warnings']));?></small><?php else:?><span class="icd-import-badge ok">Pronto</span><?php endif;?></td></tr><?php endforeach;?>
    </tbody></table></div>
-   <div class="icd-import-actions"><a class="button" href="<?php echo esc_url(add_query_arg(['page'=>'icd-visitas-importacao','smart_step'=>'mapeamento'],admin_url('admin.php')));?>">Voltar ao mapeamento</a><?php if(!$p['invalid']):?><?php icd_imp_form_open($action,'icd_smart_import_confirm','icd_smart_import_confirm','icd-import-submit-lock');?><button class="button button-primary button-hero">Confirmar importação de <?php echo (int)$p['valid'];?> linhas</button></form><?php endif;?></div>
+   <div class="icd-import-actions"><a class="button" href="<?php echo esc_url(ICD_Visitas_Helpers::page_url('icd-visitas-importacao', ['smart_step' => 'mapeamento']));?>">Voltar ao mapeamento</a><?php if(!$p['invalid']):?><?php icd_imp_form_open($action,'icd_smart_import_confirm','icd_smart_import_confirm','icd-import-submit-lock');?><button class="button button-primary button-hero">Confirmar importação de <?php echo (int)$p['valid'];?> linhas</button></form><?php endif;?></div>
   </div>
  <?php elseif($step==='resultado'&&$smartResult):?>
-  <div class="icd-panel"><h2>Carga concluída</h2><p>O arquivo foi processado e o resultado está indicado na mensagem acima.</p><a class="button button-primary" href="<?php echo esc_url(add_query_arg(['page'=>'icd-visitas-importacao'],admin_url('admin.php')));?>">Fazer nova importação</a></div>
+  <div class="icd-panel"><h2>Carga concluída</h2><p>O arquivo foi processado e o resultado está indicado na mensagem acima.</p><a class="button button-primary" href="<?php echo esc_url(ICD_Visitas_Helpers::page_url('icd-visitas-importacao'));?>">Fazer nova importação</a></div>
  <?php else:?>
-  <div class="icd-panel"><p>A sessão de importação não está mais disponível.</p><a class="button button-primary" href="<?php echo esc_url(add_query_arg(['page'=>'icd-visitas-importacao'],admin_url('admin.php')));?>">Recomeçar</a></div>
+  <div class="icd-panel"><p>A sessão de importação não está mais disponível.</p><a class="button button-primary" href="<?php echo esc_url(ICD_Visitas_Helpers::page_url('icd-visitas-importacao'));?>">Recomeçar</a></div>
  <?php endif;?>
 
  <?php if(!empty($state['file'])&&$step!=='upload'):?>

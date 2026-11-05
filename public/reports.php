@@ -10,7 +10,7 @@ $schools=$wpdb->get_results("SELECT id,nome FROM $e WHERE ativo=1 ORDER BY nome"
  <header class="icd-app-header"><div class="icd-brand"><img src="<?php echo esc_url(ICD_VISITAS_URL.'assets/logo.svg');?>" alt="Instituto Caminho de Davi"><div><small>Documentos</small><h2>Relatórios de visitas</h2></div></div></header>
  <section class="icd-card icd-report-intro"><h3>Relatório de visitas em PDF</h3><p>Selecione o período. Os demais filtros são opcionais. O relatório considera apenas visitas com status <strong>Realizada</strong>.</p></section>
  <section class="icd-card">
-  <form id="icd-report-form" class="icd-mobile-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php'));?>">
+  <form id="icd-report-form" class="icd-mobile-form" method="post" action="<?php echo esc_url(ICD_Visitas_Helpers::action_url());?>">
    <?php wp_nonce_field('icd_generate_visits_pdf');?><input type="hidden" name="action" value="icd_generate_visits_pdf">
    <div class="icd-two"><label>Data inicial<input type="date" name="from" required value="<?php echo esc_attr($from);?>"></label><label>Data final<input type="date" name="to" required value="<?php echo esc_attr($to);?>"></label></div>
    <label>Pedagoga responsável<select name="pedagoga"><option value="0">Todas</option><?php foreach($peds as $x)echo '<option value="'.(int)$x->id.'" '.selected($pid,$x->id,false).'>'.esc_html($x->nome).'</option>';?></select></label>

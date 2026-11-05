@@ -2,7 +2,7 @@
 if(!defined('ABSPATH')) exit;
 $reset_mode=isset($_GET['action']) && sanitize_key(wp_unslash($_GET['action']))==='reset';
 $reset_key=$reset_mode ? sanitize_text_field(wp_unslash($_GET['key']??'')) : '';
-$reset_login=$reset_mode ? sanitize_user(wp_unslash($_GET['login']??''),true) : '';
+$reset_login=$reset_mode ? sanitize_user(sanitize_text_field(wp_unslash($_GET['login']??'')),true) : '';
 $logged_out=!empty($_GET['loggedout']);
 ?>
 <div class="icd-login-shell">
@@ -17,14 +17,14 @@ $logged_out=!empty($_GET['loggedout']);
   <div id="icd-login-status" class="icd-login-status" hidden></div>
 
   <?php if($reset_mode): ?>
-   <form id="icd-password-reset-form" class="icd-login-form">
+   <form method="post" id="icd-password-reset-form" class="icd-login-form">
     <input type="hidden" name="key" value="<?php echo esc_attr($reset_key);?>">
     <input type="hidden" name="login" value="<?php echo esc_attr($reset_login);?>">
     <label>Nova senha<input type="password" name="newPassword" autocomplete="new-password" minlength="8" required></label>
     <label>Confirmar nova senha<input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required></label>
     <button type="submit" class="icd-submit">Redefinir senha</button>
    </form>
-   <a class="icd-forgot-link" href="<?php echo esc_url(home_url('/icd-acesso/'));?>">Voltar ao acesso</a>
+   <a class="icd-forgot-link" href="<?php echo esc_url(ICD_Visitas_Portal::url('acesso'));?>">Voltar ao acesso</a>
   <?php else: ?>
    <button type="button" class="icd-passkey-login-btn" id="icd-passkey-login">
     <span class="icd-passkey-icon" aria-hidden="true">◎</span>
@@ -34,14 +34,14 @@ $logged_out=!empty($_GET['loggedout']);
 
    <div class="icd-login-divider"><span>ou</span></div>
 
-   <form id="icd-password-login-form" class="icd-login-form" autocomplete="on">
+   <form method="post" id="icd-password-login-form" class="icd-login-form" autocomplete="on">
     <label>Usuário ou e-mail<input type="text" name="username" autocomplete="username" required></label>
     <label>Senha<input type="password" name="password" autocomplete="current-password" required></label>
     <button type="submit" class="icd-submit">Entrar com senha</button>
    </form>
    <button type="button" class="icd-forgot-link icd-link-button" id="icd-forgot-open">Esqueci minha senha</button>
 
-   <form id="icd-forgot-password-form" class="icd-login-form icd-forgot-panel" hidden>
+   <form method="post" id="icd-forgot-password-form" class="icd-login-form icd-forgot-panel" hidden>
     <h3>Redefinir senha</h3>
     <p>Informe seu usuário ou e-mail. As instruções serão enviadas para o e-mail cadastrado.</p>
     <label>Usuário ou e-mail<input type="text" name="identity" autocomplete="username" required></label>

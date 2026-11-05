@@ -3,10 +3,10 @@ if (!defined('ABSPATH')) exit;
 
 class ICD_Visitas_Students {
     public static function init() {
-        add_action('admin_post_icd_save_aluno', [__CLASS__, 'save']);
-        add_action('admin_post_icd_transfer_aluno', [__CLASS__, 'transfer']);
-        add_action('admin_post_icd_observe_aluno', [__CLASS__, 'add_observation']);
-        add_action('admin_post_icd_report_aluno', [__CLASS__, 'report']);
+        ICD_Visitas_Portal::register_action('icd_save_aluno', [__CLASS__, 'save']);
+        ICD_Visitas_Portal::register_action('icd_transfer_aluno', [__CLASS__, 'transfer']);
+        ICD_Visitas_Portal::register_action('icd_observe_aluno', [__CLASS__, 'add_observation']);
+        ICD_Visitas_Portal::register_action('icd_report_aluno', [__CLASS__, 'report']);
     }
 
     public static function can_view_all() {
@@ -98,8 +98,7 @@ class ICD_Visitas_Students {
     }
 
     public static function admin_url($id = 0) {
-        $url = admin_url('admin.php?page=icd-visitas-alunos');
-        return $id ? add_query_arg('icd_aluno', $id, $url) : $url;
+        return ICD_Visitas_Helpers::page_url('icd-visitas-alunos', $id ? ['icd_aluno' => $id] : []);
     }
 
     private static function verify_post($nonce) {

@@ -9,8 +9,8 @@ $pedagogues = $wpdb->get_results("SELECT id, nome FROM $pedagogas WHERE ativo = 
 $id = ICD_Visitas_Helpers::id_from($_GET, 'edit');
 $edit = $id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM $mediadores WHERE id = %d", $id)) : null;
 $users = get_users(['orderby' => 'display_name']);
-$post_url = admin_url('admin-post.php');
-$base_url = admin_url('admin.php?page=icd-visitas-mediadores');
+$post_url = ICD_Visitas_Helpers::action_url();
+$base_url = ICD_Visitas_Helpers::page_url('icd-visitas-mediadores');
 ?>
 <div class="wrap icd-admin">
     <h1>Mediadores</h1>

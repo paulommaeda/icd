@@ -233,7 +233,7 @@ class ICD_Visitas_Passkeys {
         if(!user_can($user,'icd_visitas_view_dashboard')) return self::fail('Este usuário não possui acesso ao sistema de visitas.',403);
         $wpdb->update($table,['sign_count'=>max($old,$new),'last_used_at'=>current_time('mysql'),'updated_at'=>current_time('mysql')],['id'=>(int)$row->id]);
         wp_set_current_user($user->ID); wp_set_auth_cookie($user->ID,true,is_ssl()); do_action('wp_login',$user->user_login,$user);
-        $redirect=wp_validate_redirect((string)($data['redirect']??''),home_url('/visitas/'));
+        $redirect=ICD_Visitas_Portal::login_destination($data['redirect']??'', $user);
         return rest_ensure_response(['success'=>true,'redirect'=>$redirect,'displayName'=>$user->display_name]);
     }
 
@@ -256,7 +256,7 @@ class ICD_Visitas_Passkeys {
         if(!user_can($user,'icd_visitas_view_dashboard')){ wp_clear_auth_cookie(); wp_set_current_user(0); return self::fail('Este usuário não possui acesso ao sistema de visitas.',403); }
         delete_transient($rate_key);
         self::mark_recent_password_auth($user->ID);
-        $redirect=wp_validate_redirect((string)($data['redirect']??''),home_url('/visitas/'));
+        $redirect=ICD_Visitas_Portal::login_destination($data['redirect']??'', $user);
         return rest_ensure_response(['success'=>true,'redirect'=>$redirect,'displayName'=>$user->display_name]);
     }
 

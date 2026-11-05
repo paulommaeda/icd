@@ -135,3 +135,71 @@ html.icd-is-loading,html.icd-is-loading body{overscroll-behavior:none}
 .icd-student-data dd {margin:0;overflow-wrap:anywhere}
 .icd-student-staff {border-top:1px solid var(--border);padding:12px 0}
 .icd-student-staff summary {font-weight:700;cursor:pointer}
+
+body.icd-portal {
+  margin: 0;
+  color: #101513;
+  font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+body.icd-portal:not(.icd-pwa-login-page) {background: #f5f7f6}
+.icd-portal button, .icd-portal input, .icd-portal select, .icd-portal textarea {font: inherit}
+.icd-portal :focus-visible {outline: 2px solid #137e38; outline-offset: 2px}
+.icd-portal-error {margin-top: clamp(24px, 12vh, 96px)}
+.icd-portal-error h1 {font-size: 1.5rem; margin: 0 0 12px}
+.icd-management-shell {max-width: 1320px}
+.icd-management-shell .icd-app-header {flex-wrap: wrap}
+.icd-management-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.icd-management-nav a {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 6px 12px;
+  border: 1px solid #e1e7e3;
+  border-radius: 10px;
+  color: #154426;
+  background: #fff;
+  text-decoration: none;
+  font-size: .875rem;
+  font-weight: 650;
+  box-sizing: border-box;
+}
+.icd-management-nav a:hover, .icd-management-nav a[aria-current="page"] {background: #e5f8eb; border-color: #9bdbaf}
+.icd-management-content .icd-admin {
+  min-width: 0;
+  padding: clamp(14px, 2vw, 24px);
+  border-radius: 16px;
+  border: 1px solid #e1e7e3;
+  background: #fff;
+}
+.icd-management-content .icd-admin h1 {margin: 0 0 12px; font-size: clamp(1.45rem, 3vw, 2rem); line-height: 1.2}
+.icd-management-content .icd-admin .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid #a6c7ae;
+  border-radius: 8px;
+  background: #fff;
+  color: #164328;
+  text-decoration: none;
+  white-space: normal;
+  font-size: .9rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.icd-management-content .icd-admin .button-primary {background: #19db4b; color: #102519; border-color: #13bf40}
+.icd-management-content .icd-admin .button:disabled {opacity: .6; cursor: wait}
+.icd-management-content .icd-admin .widefat {border-collapse: collapse; width: 100%; margin-top: 12px}
+.icd-management-content .icd-admin > .widefat {display: block; overflow-x: auto}
+.icd-management-content .icd-admin .widefat :is(th,td) {text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid #e1e7e3}
+.icd-management-content .icd-admin .widefat thead {background: #eef6f0}
+.icd-management-content .icd-admin .widefat.striped tbody tr:nth-child(even) {background: #f7faf8}
+.icd-management-content .icd-admin .notice {padding: 3px 12px; margin-bottom: 12px; border-left: 3px solid #148842; background: #f0f8f2}
+.icd-management-content .icd-admin .notice-error {border-color: #b43b38; background: #fff5f4}

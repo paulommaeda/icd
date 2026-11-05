@@ -6,12 +6,6 @@ class ICD_Visitas_Account {
 
  public static function init(){
   add_action('rest_api_init',[__CLASS__,'routes']);
-  add_filter('show_admin_bar',[__CLASS__,'show_admin_bar'],99);
- }
-
- public static function show_admin_bar($show){
-  if(!is_user_logged_in()) return $show;
-  return current_user_can('manage_options') ? $show : false;
  }
 
  public static function routes(){
@@ -84,7 +78,7 @@ class ICD_Visitas_Account {
   if($user && user_can($user,'icd_visitas_view_dashboard')){
    $key=get_password_reset_key($user);
    if(!is_wp_error($key)){
-    $url=add_query_arg(['action'=>'reset','key'=>$key,'login'=>$user->user_login],home_url('/icd-acesso/'));
+    $url=add_query_arg(['action'=>'reset','key'=>$key,'login'=>$user->user_login],ICD_Visitas_Portal::url('acesso'));
     $subject='Redefinição de senha - Instituto Caminho de Davi';
     $message="Olá, {$user->display_name}.\n\nRecebemos uma solicitação para redefinir sua senha do sistema Gestão de Visitas.\n\nAbra o link abaixo para criar uma nova senha:\n{$url}\n\nSe você não solicitou esta alteração, ignore esta mensagem.";
     wp_mail($user->user_email,$subject,$message);
@@ -108,6 +102,6 @@ class ICD_Visitas_Account {
   wp_set_auth_cookie($user->ID,true,is_ssl());
   do_action('wp_login',$user->user_login,$user);
   ICD_Visitas_Passkeys::mark_recent_password_auth($user->ID);
-  return rest_ensure_response(['success'=>true,'message'=>'Senha redefinida com sucesso.','redirect'=>home_url('/visitas/')]);
+  return rest_ensure_response(['success'=>true,'message'=>'Senha redefinida com sucesso.','redirect'=>ICD_Visitas_Portal::url()]);
  }
 }

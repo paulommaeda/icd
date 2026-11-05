@@ -2,7 +2,7 @@
 Contributors: icd
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.9.0
+Stable tag: 0.10.0
 
 Sistema mobile first para acompanhamento das visitas pedagógicas do Instituto Caminho de Davi.
 
@@ -11,6 +11,12 @@ Sistema mobile first para acompanhamento das visitas pedagógicas do Instituto C
 * Pedagogas realizam visitas de supervisão às escolas.
 * Cada visita registra pedagoga(s), mediadores acompanhados e observações.
 * O dashboard possui filtros por período, município, escola, mediador, pedagoga, status e turno.
+
+== Portal ICD ==
+* Com o plugin ativo, a página inicial e as rotas públicas do WordPress exibem o portal do ICD. O portal carrega seu próprio layout, sem o cabeçalho, menu, conteúdo ou rodapé do tema.
+* Use Gestão ICD no dashboard para acessar as áreas autorizadas para seu perfil. A gestão de visitas, cadastros, vínculos, agenda, alunos e importação XLSX funciona no portal.
+* Administradores podem criar contas e atribuir perfis do sistema em Gestão ICD > Acessos. A administração do WordPress fica disponível somente para administradores do WordPress.
+* Os endereços anteriores do portal e páginas com os shortcodes continuam encaminhando para as telas correspondentes. O portal funciona também com links permanentes simples.
 
 == Shortcodes ==
 [icd_dashboard]
@@ -22,16 +28,22 @@ Sistema mobile first para acompanhamento das visitas pedagógicas do Instituto C
 [icd_alunos]
 
 == Alunos e equipe ==
-* Em ICD Visitas > Mediadores, selecione a pedagoga responsável na lista e clique em Salvar vínculo. Na primeira migração, atribua as pedagogas às mediadoras já cadastradas. As pedagogas que realizaram visitas anteriores continuam registradas no histórico de cada visita.
-* Em ICD Visitas > Alunos, cadastre o nome e a data de nascimento e selecione a escola e a mediadora. Use Trocar vínculos na ficha para transferir o aluno.
+* Em Gestão ICD > Mediadores, selecione a pedagoga responsável na lista e clique em Salvar vínculo. Na primeira migração, atribua as pedagogas às mediadoras já cadastradas. As pedagogas que realizaram visitas anteriores continuam registradas no histórico de cada visita.
+* Em Gestão ICD > Alunos, cadastre o nome e a data de nascimento e selecione a escola e a mediadora. Use Trocar vínculos na ficha para transferir o aluno.
 * Vincule as pedagogas e mediadoras aos respectivos usuários WordPress em seus cadastros. Use os papéis Pedagoga ICD e Mediador ICD para esses acessos.
 * No portal, a aba Alunos mostra os alunos da mediadora e os alunos da equipe da pedagoga. Cada ficha permite registrar observações datadas e baixar o histórico em PDF. Os vínculos atuais definem quem pode acessar o histórico.
-* Atribua o papel Direção ICD em Usuários para dar acesso de consulta a todos os alunos, pedagogas, mediadoras e relatórios. Administradores e coordenadores podem cadastrar e transferir alunos e mediadoras.
+* Atribua o papel Direção ICD em Gestão ICD > Acessos para dar acesso de consulta a todos os alunos, pedagogas, mediadoras e relatórios. Administradores e coordenadores podem cadastrar e transferir alunos e mediadoras.
 
 == Instalação e atualizações ==
-* Para instalar ou atualizar a versão 0.8.0, envie o ZIP com a pasta icd-visitas em Plugins > Adicionar plugin > Enviar plugin. Em uma atualização, escolha substituir a versão atual quando o WordPress perguntar. As tabelas e os perfis são atualizados ao carregar a nova versão.
+* Para instalar ou atualizar manualmente, envie o ZIP com a pasta icd-visitas em Plugins > Adicionar plugin > Enviar plugin. Em uma atualização, escolha substituir a versão atual quando o WordPress perguntar. As tabelas e os perfis são atualizados ao carregar a nova versão.
 * Em Plugins > Plugins instalados, use Ativar atualizações automáticas para o ICD Visitas. O WordPress consulta o repositório público paulommaeda/icd no GitHub e usa seu fluxo padrão de atualização.
 * Para distribuir uma nova versão, aumente a versão no cabeçalho e na constante ICD_VISITAS_VERSION do arquivo icd-visitas.php, atualize este arquivo e publique a versão testada na branch main. O atualizador usa o ZIP do mesmo commit do cabeçalho que anunciou a versão.
+
+== 0.10.0 ==
+* Portal independente do tema com layout próprio, login, navegação e manifesto de aplicativo.
+* Gestão de visitas, cadastros, vínculos, alunos e importação no front-end.
+* Área de acessos para administradores criarem contas e atribuírem perfis ICD no portal.
+* Bloqueio do painel e das rotas genéricas da API do WordPress para usuários que não são administradores.
 
 == 0.9.0 ==
 * Vínculo de supervisão entre mediadoras e pedagogas com troca direta na lista de mediadoras.

@@ -17,7 +17,7 @@ $passkeys=ICD_Visitas_Passkeys::current_user_passkeys();
  <section class="icd-card">
   <h3>Meus dados</h3>
   <div id="icd-profile-status" class="icd-login-status" hidden></div>
-  <form id="icd-profile-form" class="icd-mobile-form">
+  <form method="post" id="icd-profile-form" class="icd-mobile-form">
    <label>Usuário<input type="text" value="<?php echo esc_attr($user->user_login);?>" readonly disabled></label>
    <label>Nome<input type="text" name="name" value="<?php echo esc_attr($user->display_name);?>" autocomplete="name" required></label>
    <label>E-mail<input type="email" name="email" value="<?php echo esc_attr($user->user_email);?>" autocomplete="email" required></label>
@@ -29,7 +29,7 @@ $passkeys=ICD_Visitas_Passkeys::current_user_passkeys();
  <section class="icd-card">
   <h3>Alterar senha</h3>
   <div id="icd-change-password-status" class="icd-login-status" hidden></div>
-  <form id="icd-change-password-form" class="icd-mobile-form">
+  <form method="post" id="icd-change-password-form" class="icd-mobile-form">
    <label>Senha atual<input type="password" name="currentPassword" autocomplete="current-password" required></label>
    <label>Nova senha<input type="password" name="newPassword" autocomplete="new-password" minlength="8" required></label>
    <label>Confirmar nova senha<input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required></label>
@@ -59,8 +59,11 @@ $passkeys=ICD_Visitas_Passkeys::current_user_passkeys();
  </section>
 
  <section class="icd-card icd-account-actions">
-  <a class="icd-logout-btn" href="<?php echo esc_url(ICD_Visitas_Public::front_logout_url());?>">Sair do sistema</a>
+  <a class="icd-logout-btn" href="<?php echo esc_url(wp_logout_url());?>">Sair do sistema</a>
  </section>
 
+ <?php if (ICD_Visitas_Portal::is_wordpress_admin()): ?>
+ <p class="icd-card"><a href="<?php echo esc_url(admin_url()); ?>">Administração do WordPress</a></p>
+ <?php endif; ?>
  <?php require ICD_VISITAS_DIR.'public/nav.php';?>
 </div>
