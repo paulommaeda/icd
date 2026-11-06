@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Instituto Caminho de Davi - Gestão de Visitas
  * Description: Portal do Instituto Caminho de Davi para gestão de visitas, escolas, equipe e alunos.
- * Version: 0.10.0
+ * Version: 0.11.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Update URI: https://github.com/paulommaeda/icd
@@ -10,7 +10,7 @@
  * Text Domain: icd-visitas
  */
 if (!defined('ABSPATH')) exit;
-define('ICD_VISITAS_VERSION','0.10.0');
+define('ICD_VISITAS_VERSION','0.11.0');
 define('ICD_VISITAS_FILE',__FILE__);
 define('ICD_VISITAS_DIR',plugin_dir_path(__FILE__));
 define('ICD_VISITAS_URL',plugin_dir_url(__FILE__));

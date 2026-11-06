@@ -148,7 +148,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     try{
       const res=await fetch(url.toString(),{credentials:'same-origin'});const json=await res.json();if(!json.success)throw new Error(json.data&&json.data.message?json.data.message:'Falha ao carregar a visita.');const v=json.data;
       const edit=(Number(ICDVisitasPublic.canManage)===1&&v.front_edit_url)?`<a class="icd-edit-btn" href="${esc(v.front_edit_url)}">Editar visita</a>`:'';
-      summaryContent.innerHTML=`<div class="icd-visit-summary-head"><small>Resumo da visita</small><h3 id="icd-visit-summary-title">${esc(v.escola)}</h3><span>${esc(v.data)}</span></div><div class="icd-visit-summary-grid"><div><small>Pedagoga</small><strong>${esc(v.pedagogas)}</strong></div><div><small>Mediadores</small><strong>${esc(v.mediadores)}</strong></div><div><small>Turno</small><strong>${esc(v.turno)}</strong></div><div><small>Status</small><strong>${esc(v.status)}</strong></div></div><div class="icd-visit-summary-notes"><small>Observações</small><p>${esc(v.observacoes)}</p></div>${edit}`;
+      const students=v.student_records_url?`<a class="icd-edit-btn" href="${esc(v.student_records_url)}">Registros dos alunos</a>`:'';
+      summaryContent.innerHTML=`<div class="icd-visit-summary-head"><small>Resumo da visita</small><h3 id="icd-visit-summary-title">${esc(v.escola)}</h3><span>${esc(v.data)}</span></div><div class="icd-visit-summary-grid"><div><small>Pedagoga</small><strong>${esc(v.pedagogas)}</strong></div><div><small>Mediadores</small><strong>${esc(v.mediadores)}</strong></div><div><small>Turno</small><strong>${esc(v.turno)}</strong></div><div><small>Status</small><strong>${esc(v.status)}</strong></div></div><div class="icd-visit-summary-notes"><small>Observações</small><p>${esc(v.observacoes)}</p></div>${students}${edit}`;
     }catch(err){summaryContent.innerHTML=`<p class="icd-front-calendar-error">${esc(err.message)}</p>`;}
   };
   document.addEventListener('click',e=>{
@@ -271,7 +272,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       if(!pdfBlob||pdfBlob.size<100)throw new Error('O PDF retornado está vazio.');
       pdfFilename=data.filename||'relatorio-visitas.pdf';
       pdfUrl=URL.createObjectURL(pdfBlob);
-      setStatus('PDF gerado com sucesso'+(Number.isFinite(Number(data.count))?' · '+Number(data.count)+' visita(s)':'')+'.','success');
+      setStatus(`PDF gerado · ${Number(data.count)||0} visita(s) · ${Number(data.student_count)||0} registro(s) de alunos`, 'success');
       if(ready){ready.hidden=false;ready.scrollIntoView({behavior:'smooth',block:'nearest'});}
     }catch(err){
       clearPdf();

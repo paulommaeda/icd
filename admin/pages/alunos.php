@@ -1,10 +1,10 @@
 <?php
 if (!defined('ABSPATH')) exit;
-if (!ICD_Visitas_Students::can_view_all()) wp_die('Acesso negado.', '', ['response' => 403]);
+$manage = ICD_Visitas_Students::can_manage();
+if (!$manage && !ICD_Visitas_Students::can_view_all()) wp_die('Acesso negado.', '', ['response' => 403]);
 
 $id = ICD_Visitas_Helpers::id_from($_GET, 'icd_aluno');
-$student = $id ? ICD_Visitas_Students::find($id) : null;
-$manage = current_user_can('icd_visitas_manage_cadastros');
+$student = $id ? ICD_Visitas_Students::find($id, 0, $manage) : null;
 $in_admin = true;
 $base_url = ICD_Visitas_Students::admin_url();
 $post_url = ICD_Visitas_Helpers::action_url();
@@ -14,9 +14,8 @@ $message = $messages[sanitize_key($_GET['icd_status'] ?? '')] ?? '';
 if ($manage && (!$id || $student)) {
     global $wpdb;
     $escolas = ICD_Visitas_Database::table('escolas');
-    $mediadores = ICD_Visitas_Database::table('mediadores');
     $schools = $wpdb->get_results($wpdb->prepare("SELECT id, nome, ativo FROM $escolas WHERE ativo = 1 OR id = %d ORDER BY nome, id", $student->escola_id ?? 0));
-    $mediators = $wpdb->get_results($wpdb->prepare("SELECT id, nome, ativo FROM $mediadores WHERE ativo = 1 OR id = %d ORDER BY nome, id", $student->mediador_id ?? 0));
+    $mediators = ICD_Visitas_Students::assignment_options((int) ($student->mediador_id ?? 0));
 }
 ?>
 <div class="wrap icd-admin icd-students-admin">
@@ -59,7 +58,8 @@ if ($manage && (!$id || $student)) {
         <?php require ICD_VISITAS_DIR . 'views/aluno-observacoes.php'; ?>
     <?php else: ?>
         <?php if ($manage): ?>
-            <details class="icd-student-card" <?php if ($search === '') echo 'open'; ?>>
+            <?php if (!$mediators): ?><p role="status">Para cadastrar alunos, a sua equipe precisa ter uma mediadora ativa.</p><?php endif; ?>
+            <details class="icd-student-card" <?php if ($search === '' && $mediators) echo 'open'; ?>>
                 <summary>Cadastrar aluno</summary>
                 <form class="icd-form-grid" method="post" action="<?php echo esc_url($post_url); ?>">
                     <?php wp_nonce_field('icd_save_aluno_0'); ?>
@@ -67,7 +67,7 @@ if ($manage && (!$id || $student)) {
                     <label>Nome<input name="nome" maxlength="190" required></label>
                     <label>Data de nascimento<input type="date" name="data_nascimento" max="<?php echo esc_attr(current_time('Y-m-d')); ?>" required></label>
                     <?php require ICD_VISITAS_DIR . 'views/aluno-vinculos.php'; ?>
-                    <button type="submit" class="button button-primary">Cadastrar aluno</button>
+                    <button type="submit" class="button button-primary" <?php disabled(!$mediators); ?>>Cadastrar aluno</button>
                 </form>
             </details>
         <?php endif; ?>
@@ -79,7 +79,7 @@ if ($manage && (!$id || $student)) {
             <button type="submit" class="button">Buscar</button>
             <?php if ($search !== ''): ?><a href="<?php echo esc_url($base_url); ?>">Limpar</a><?php endif; ?>
         </form>
-        <?php $rows = ICD_Visitas_Students::listing($search); ?>
+        <?php $rows = ICD_Visitas_Students::listing($search, 0, $manage); ?>
         <table class="widefat striped">
             <thead><tr><th scope="col">Nome</th><th scope="col">Escola</th><th scope="col">Mediadora</th><th scope="col">Ações</th></tr></thead>
             <tbody>

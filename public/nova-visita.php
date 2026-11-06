@@ -1,12 +1,18 @@
 <?php
 if(!defined('ABSPATH'))exit;global $wpdb;
-$te=ICD_Visitas_Database::table('escolas');$tm=ICD_Visitas_Database::table('mediadores');$tvinc=ICD_Visitas_Database::table('vinculos');$tpg=ICD_Visitas_Database::table('pedagogas');$tv=ICD_Visitas_Database::table('visitas');$tp=ICD_Visitas_Database::table('participantes');$tvp=ICD_Visitas_Database::table('visita_pedagogas');
-$schools=$wpdb->get_results("SELECT id,nome FROM $te WHERE ativo=1 ORDER BY nome");$meds=$wpdb->get_results("SELECT id,nome FROM $tm WHERE ativo=1 ORDER BY nome");$peds=$wpdb->get_results("SELECT id,nome FROM $tpg WHERE ativo=1 ORDER BY nome");$currentPed=ICD_Visitas_Helpers::current_pedagoga_id();$map=[];foreach($wpdb->get_results("SELECT escola_id,mediador_id FROM $tvinc WHERE ativo=1") as $x)$map[$x->mediador_id][]=(int)$x->escola_id;
+$te=ICD_Visitas_Database::table('escolas');$tm=ICD_Visitas_Database::table('mediadores');$tpg=ICD_Visitas_Database::table('pedagogas');$tv=ICD_Visitas_Database::table('visitas');$tp=ICD_Visitas_Database::table('participantes');$tvp=ICD_Visitas_Database::table('visita_pedagogas');
+$schools=$wpdb->get_results("SELECT id,nome FROM $te WHERE ativo=1 ORDER BY nome");$meds=$wpdb->get_results("SELECT id,nome FROM $tm WHERE ativo=1 ORDER BY nome");$peds=$wpdb->get_results("SELECT id,nome FROM $tpg WHERE ativo=1 ORDER BY nome");$currentPed=ICD_Visitas_Helpers::current_pedagoga_id();
 $edit_id=absint($_GET['editar']??0);$edit=null;$editMeds=[];$editPeds=[];
 if($edit_id){$edit=$wpdb->get_row($wpdb->prepare("SELECT * FROM $tv WHERE id=%d",$edit_id));if($edit){$editMeds=array_map('intval',$wpdb->get_col($wpdb->prepare("SELECT mediador_id FROM $tp WHERE visita_id=%d",$edit_id)));$editPeds=array_map('intval',$wpdb->get_col($wpdb->prepare("SELECT pedagoga_id FROM $tvp WHERE visita_id=%d",$edit_id)));}}
+
+$map = ICD_Visitas_Helpers::visit_mediator_map($edit, $editMeds);
+$visit_students_url = ICD_Visitas_Students::visit_url(ICD_Visitas_Helpers::id_from($_GET, 'icd_visita_realizada') ?: (int) ($edit->id ?? 0));
 ?>
 <div class="icd-shell"><header class="icd-app-header"><div class="icd-brand"><img src="<?php echo esc_url(ICD_VISITAS_URL.'assets/logo.svg');?>" alt=""><div><small>Supervisão pedagógica</small><h2><?php echo $edit?'Editar visita':'Registrar visita';?></h2></div></div></header>
 <?php if(isset($_GET['saved'])):?><div class="icd-success">Visita registrada com sucesso.</div><?php endif;?><?php if(isset($_GET['updated'])):?><div class="icd-success">Visita atualizada com sucesso.</div><?php endif;?>
+<?php if ($visit_students_url): ?>
+<p><a class="icd-edit-btn" href="<?php echo esc_url($visit_students_url); ?>">Registrar observações dos alunos</a></p>
+<?php endif; ?>
 <form class="icd-mobile-form" method="post" action="<?php echo esc_url(ICD_Visitas_Helpers::action_url());?>"><?php wp_nonce_field('icd_save_visita');?><input type="hidden" name="action" value="icd_save_visita"><input type="hidden" name="id" value="<?php echo (int)($edit->id??0);?>"><input type="hidden" name="tipo" value="acompanhamento"><input type="hidden" name="origem" value="<?php echo esc_attr($edit->origem??'manual');?>"><input type="hidden" name="redirect_to" value="<?php echo esc_url(ICD_Visitas_Portal::url('nova-visita'));?>">
 <label>Escola<select required name="escola_id" id="icd-school"><option value="">Selecione</option><?php foreach($schools as $x)echo '<option value="'.$x->id.'" '.selected((int)($edit->escola_id??0),$x->id,false).'>'.esc_html($x->nome).'</option>';?></select></label>
 <div class="icd-two"><label>Data<input required type="date" name="data_visita" value="<?php echo esc_attr($edit->data_visita??current_time('Y-m-d'));?>"></label><label>Turno<select name="turno"><?php foreach(['manha'=>'Manhã','tarde'=>'Tarde','noite'=>'Noite','integral'=>'Integral'] as $k=>$lab)echo '<option value="'.$k.'" '.selected($edit->turno??'manha',$k,false).'>'.$lab.'</option>';?></select></label></div>

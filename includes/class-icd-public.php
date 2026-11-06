@@ -3,8 +3,8 @@ if(!defined('ABSPATH')) exit;
 class ICD_Visitas_Public {
  public static function profile_url() { return ICD_Visitas_Portal::url('perfil'); }
  public static function reports_url() { return ICD_Visitas_Portal::url('relatorios'); }
- public static function students_url($id = 0) {
-  return ICD_Visitas_Portal::url('alunos', $id ? ['icd_aluno' => $id] : []);
+ public static function students_url($id = 0, $args = []) {
+  return ICD_Visitas_Portal::url('alunos', ($id ? ['icd_aluno' => $id] : []) + $args);
  }
  public static function students() {
   if (!is_user_logged_in()) return self::login_screen();

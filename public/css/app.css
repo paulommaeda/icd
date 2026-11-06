@@ -203,3 +203,9 @@ body.icd-portal:not(.icd-pwa-login-page) {background: #f5f7f6}
 .icd-management-content .icd-admin .widefat.striped tbody tr:nth-child(even) {background: #f7faf8}
 .icd-management-content .icd-admin .notice {padding: 3px 12px; margin-bottom: 12px; border-left: 3px solid #148842; background: #f0f8f2}
 .icd-management-content .icd-admin .notice-error {border-color: #b43b38; background: #fff5f4}
+
+.icd-student-period {padding: 14px 0; margin: 14px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border)}
+.icd-student-period button {justify-self: start}
+.icd-student-visit p {margin: 4px 0 10px}
+.icd-bottom-nav.icd-bottom-nav-four {grid-template-columns:repeat(4,minmax(0,1fr))}
+.icd-success a {color:inherit; font-weight:700; margin-left:6px}

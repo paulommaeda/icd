@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 class ICD_Visitas_Database {
-    const SCHEMA_VERSION = '0.9.0';
+    const SCHEMA_VERSION = '0.11.0';
 
     public static function table($name){ global $wpdb; return $wpdb->prefix.'icd_visitas_'.$name; }
     public static function old_table($name){ global $wpdb; return $wpdb->prefix.'jv_'.$name; }
@@ -63,14 +63,23 @@ class ICD_Visitas_Database {
             autor_id bigint unsigned NOT NULL,
             observacao longtext NOT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            data_registro date NULL,
+            visita_id bigint unsigned NULL,
+            escola_id bigint unsigned NULL,
+            mediador_id bigint unsigned NULL,
+            pedagoga_id bigint unsigned NULL,
             PRIMARY KEY  (id),
-            KEY aluno_historico (aluno_id,created_at,id)
+            KEY aluno_historico (aluno_id,created_at,id),
+            KEY visita_id (visita_id)
         ) $c;");
 
         self::migrate_legacy();
         ICD_Visitas_Permissions::activate();
         $coluna = $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM $mediadores LIKE %s", $wpdb->esc_like('pedagoga_id')));
-        if ($coluna && self::exists($alunos) && self::exists($observacoes)) {
+        if (!$coluna || !self::exists($alunos) || !self::exists($observacoes)) return;
+        $campos = $wpdb->get_col("SHOW COLUMNS FROM $observacoes");
+        if (array_diff(['data_registro','visita_id','escola_id','mediador_id','pedagoga_id'], $campos)) return;
+        if ($wpdb->query("UPDATE $observacoes SET data_registro = DATE(created_at) WHERE data_registro IS NULL") !== false) {
             update_option('icd_visitas_db_version', self::SCHEMA_VERSION);
         }
     }

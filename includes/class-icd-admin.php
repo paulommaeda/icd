@@ -34,12 +34,14 @@ class ICD_Visitas_Admin {
 
  public static function available_pages() {
   $pages = array_filter(self::pages(), static function ($page) {
+   if ($page[2] === 'alunos') return ICD_Visitas_Students::can_view_all() || ICD_Visitas_Students::can_manage();
    if ($page[2] === 'access' && !ICD_Visitas_Portal::is_wordpress_admin()) return false;
    return current_user_can($page[1]);
   });
   // Um perfil de consulta usa o portal de alunos e relatórios sem um menu de cadastros.
   if (!current_user_can('icd_visitas_manage_visitas') && !current_user_can('icd_visitas_manage_cadastros')
-   && !current_user_can('icd_visitas_manage_settings') && !ICD_Visitas_Portal::is_wordpress_admin()) return [];
+   && !current_user_can('icd_visitas_manage_settings') && !ICD_Visitas_Students::can_manage()
+   && !ICD_Visitas_Portal::is_wordpress_admin()) return [];
   return $pages;
  }
 
@@ -192,17 +194,26 @@ class ICD_Visitas_Admin {
   $wpdb->delete(ICD_Visitas_Database::table('visita_pedagogas'),['visita_id'=>$id]); foreach(array_map('absint',(array)($_POST['pedagogas']??[])) as $pid) if($pid)$wpdb->insert(ICD_Visitas_Database::table('visita_pedagogas'),['visita_id'=>$id,'pedagoga_id'=>$pid]);
   ICD_Visitas_Helpers::log('visita',$id,'salvar',$d);
   $redirect=esc_url_raw(wp_unslash($_POST['redirect_to']??''));
-  if($redirect){ wp_safe_redirect(add_query_arg($id&&isset($_POST['id'])&&absint($_POST['id'])?'updated':'saved','1',$redirect)); exit; }
-  ICD_Visitas_Helpers::redirect('icd-visitas-registros',['saved'=>1]);
+  $status = !empty($_POST['id']) ? 'updated' : 'saved';
+  $args = [$status => '1'];
+  if ($d['status'] === 'realizada') $args['icd_visita_realizada'] = $id;
+  if ($redirect) { wp_safe_redirect(add_query_arg($args, $redirect)); exit; }
+  ICD_Visitas_Helpers::redirect('icd-visitas-registros', $args);
  }
  public static function complete_visita(){
-  if(!current_user_can('icd_visitas_manage_visitas')) wp_die('Acesso negado.'); global $wpdb; $id=absint($_POST['id']??0); check_admin_referer('icd_complete_visita_'.$id);
-  if(!$id) wp_die('Visita inválida.');
+  if (!current_user_can('icd_visitas_manage_visitas')) wp_die('Acesso negado.', '', ['response' => 403]);
+  global $wpdb;
+  $id = ICD_Visitas_Helpers::id_from($_POST, 'id');
+  check_admin_referer('icd_complete_visita_' . $id);
+  $table = ICD_Visitas_Database::table('visitas');
+  if (!$id || !$wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE id = %d", $id))) {
+   wp_die('Visita indisponível.', '', ['response' => 404]);
+  }
   $observacoes=isset($_POST['observacoes'])?sanitize_textarea_field(wp_unslash($_POST['observacoes'])):'';
   $data=['status'=>'realizada','observacoes'=>$observacoes,'updated_at'=>current_time('mysql')];
-  $wpdb->update(ICD_Visitas_Database::table('visitas'),$data,['id'=>$id]);
+  if ($wpdb->update($table, $data, ['id' => $id]) === false) wp_die('Não foi possível concluir a visita.');
   ICD_Visitas_Helpers::log('visita',$id,'marcar_realizada',['status'=>'realizada','observacoes'=>$observacoes]);
-  $redirect=!empty($_POST['redirect_to'])?esc_url_raw(wp_unslash($_POST['redirect_to'])):wp_get_referer(); wp_safe_redirect(add_query_arg('done','1',$redirect?:ICD_Visitas_Portal::url())); exit;
+  $redirect=!empty($_POST['redirect_to'])?esc_url_raw(wp_unslash($_POST['redirect_to'])):wp_get_referer(); wp_safe_redirect(add_query_arg(['done' => '1', 'icd_visita_realizada' => $id], $redirect ?: ICD_Visitas_Portal::url('agenda'))); exit;
  }
  public static function delete_visita(){
   if(!current_user_can('icd_visitas_manage_visitas')) wp_die('Acesso negado.'); global $wpdb; $id=absint($_POST['id']??0); check_admin_referer('icd_delete_visita_'.$id);
@@ -220,7 +231,7 @@ class ICD_Visitas_Admin {
   $tv=ICD_Visitas_Database::table('visitas'); $te=ICD_Visitas_Database::table('escolas'); $tm=ICD_Visitas_Database::table('mediadores'); $tp=ICD_Visitas_Database::table('participantes'); $tpg=ICD_Visitas_Database::table('pedagogas'); $tvp=ICD_Visitas_Database::table('visita_pedagogas');
   $r=$wpdb->get_row($wpdb->prepare("SELECT v.id,v.data_visita,v.turno,v.status,v.observacoes,e.nome escola,(SELECT GROUP_CONCAT(m.nome SEPARATOR ', ') FROM $tp p JOIN $tm m ON m.id=p.mediador_id WHERE p.visita_id=v.id) mediadores,(SELECT GROUP_CONCAT(pg.nome SEPARATOR ', ') FROM $tvp vp JOIN $tpg pg ON pg.id=vp.pedagoga_id WHERE vp.visita_id=v.id) pedagogas FROM $tv v JOIN $te e ON e.id=v.escola_id WHERE v.id=%d",$id));
   if(!$r) wp_send_json_error(['message'=>'Visita não encontrada.'],404);
-  wp_send_json_success(['id'=>(int)$r->id,'data'=>date_i18n('d/m/Y',strtotime($r->data_visita)),'escola'=>$r->escola,'turno'=>ICD_Visitas_Helpers::turno_label($r->turno),'status'=>ICD_Visitas_Helpers::status_label($r->status),'mediadores'=>$r->mediadores?:'Não informados','pedagogas'=>$r->pedagogas?:'Não informada','observacoes'=>$r->observacoes?:'Nenhuma observação registrada.','front_edit_url'=>add_query_arg('editar',(int)$r->id,ICD_Visitas_Portal::url('nova-visita'))]);
+  wp_send_json_success(['id'=>(int)$r->id,'data'=>date_i18n('d/m/Y',strtotime($r->data_visita)),'escola'=>$r->escola,'turno'=>ICD_Visitas_Helpers::turno_label($r->turno),'status'=>ICD_Visitas_Helpers::status_label($r->status),'mediadores'=>$r->mediadores?:'Não informados','pedagogas'=>$r->pedagogas?:'Não informada','observacoes'=>$r->observacoes?:'Nenhuma observação registrada.','student_records_url'=>$r->status==='realizada'?ICD_Visitas_Students::visit_url($id):'','front_edit_url'=>add_query_arg('editar',(int)$r->id,ICD_Visitas_Portal::url('nova-visita'))]);
  }
 
  public static function school_calendar(){

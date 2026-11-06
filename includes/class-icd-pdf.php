@@ -68,17 +68,23 @@ class ICD_Visitas_PDF {
   $this->writeWrapped(18,$this->y,174,$value,$valueSize,false,[35,45,39],$lineHeight);
   $this->y+=2.2;
  }
- public function notes($value){
+ public function heading($text,$keep_with_next=0){
+  $this->ensureSpace(11+$keep_with_next);
+  $this->gap(4);
+  $this->text(18,$this->y,$text,11,true,$this->textColor);
+  $this->gap(7);
+ }
+ public function notes($value,$label='OBSERVAÇÕES'){
   $value=trim((string)$value);
   if($value==='') $value='Sem observações registradas.';
   $this->ensureSpace(15);
-  $this->text(18,$this->y,'OBSERVAÇÕES',8.5,true,$this->muted);
+  $this->text(18,$this->y,$label,8.5,true,$this->muted);
   $this->y+=4.3;
   $lines=$this->wrap($value,170,10.3,false);
   foreach($lines as $line){
    if($this->y+5.3>272){
     $this->addPage();
-    $this->text(18,$this->y,'OBSERVAÇÕES - CONTINUAÇÃO',8.5,true,$this->muted);
+    $this->text(18,$this->y,$label.' - CONTINUAÇÃO',8.5,true,$this->muted);
     $this->y+=4.3;
    }
    $this->text(18,$this->y,$line,10.3,false,[35,45,39]);

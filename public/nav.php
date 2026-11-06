@@ -1,8 +1,8 @@
 <?php
 $show_students = ICD_Visitas_Students::can_view();
-$show_register = !$show_students || current_user_can('icd_visitas_manage_visitas');
+$show_register = current_user_can('icd_visitas_manage_visitas');
 ?>
-<nav class="icd-bottom-nav<?php if ($show_students && $show_register) echo ' icd-bottom-nav-six'; ?>">
+<nav class="icd-bottom-nav<?php if ($show_students && $show_register) echo ' icd-bottom-nav-six'; elseif (!$show_students && !$show_register) echo ' icd-bottom-nav-four'; ?>">
  <a href="<?php echo esc_url(ICD_Visitas_Portal::url('visitas'));?>"><span>⌂</span>Dashboard</a>
  <?php if ($show_register): ?><a href="<?php echo esc_url(ICD_Visitas_Portal::url('nova-visita'));?>"><span>＋</span>Registrar</a><?php endif; ?>
  <a href="<?php echo esc_url(ICD_Visitas_Portal::url('agenda'));?>"><span>▣</span>Agenda</a>

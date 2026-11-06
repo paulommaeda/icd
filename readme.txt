@@ -2,7 +2,7 @@
 Contributors: icd
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.10.0
+Stable tag: 0.11.0
 
 Sistema mobile first para acompanhamento das visitas pedagógicas do Instituto Caminho de Davi.
 
@@ -32,12 +32,19 @@ Sistema mobile first para acompanhamento das visitas pedagógicas do Instituto C
 * Em Gestão ICD > Alunos, cadastre o nome e a data de nascimento e selecione a escola e a mediadora. Use Trocar vínculos na ficha para transferir o aluno.
 * Vincule as pedagogas e mediadoras aos respectivos usuários WordPress em seus cadastros. Use os papéis Pedagoga ICD e Mediador ICD para esses acessos.
 * No portal, a aba Alunos mostra os alunos da mediadora e os alunos da equipe da pedagoga. Cada ficha permite registrar observações datadas e baixar o histórico em PDF. Os vínculos atuais definem quem pode acessar o histórico.
-* Atribua o papel Direção ICD em Gestão ICD > Acessos para dar acesso de consulta a todos os alunos, pedagogas, mediadoras e relatórios. Administradores e coordenadores podem cadastrar e transferir alunos e mediadoras.
+* Atribua o papel Direção ICD em Gestão ICD > Acessos para dar acesso de consulta a todos os alunos, pedagogas, mediadoras e relatórios. Pedagogas cadastram e distribuem alunos entre as mediadoras da própria equipe. Administradores e coordenadores têm acesso de gestão a todas as equipes.
 
 == Instalação e atualizações ==
 * Para instalar ou atualizar manualmente, envie o ZIP com a pasta icd-visitas em Plugins > Adicionar plugin > Enviar plugin. Em uma atualização, escolha substituir a versão atual quando o WordPress perguntar. As tabelas e os perfis são atualizados ao carregar a nova versão.
 * Em Plugins > Plugins instalados, use Ativar atualizações automáticas para o ICD Visitas. O WordPress consulta o repositório público paulommaeda/icd no GitHub e usa seu fluxo padrão de atualização.
 * Para distribuir uma nova versão, aumente a versão no cabeçalho e na constante ICD_VISITAS_VERSION do arquivo icd-visitas.php, atualize este arquivo e publique a versão testada na branch main. O atualizador usa o ZIP do mesmo commit do cabeçalho que anunciou a versão.
+
+== 0.11.0 ==
+* A pedagoga cadastra e distribui alunos em Gestão ICD > Alunos. A ficha de cada aluno fica disponível à mediadora responsável e à pedagoga da equipe.
+* Mediadoras registram os encontros na ficha do aluno. A data do encontro ou da observação pode ser informada ao salvar. A ficha e seu PDF oferecem filtro por período.
+* Na agenda, a pedagoga registra a observação geral ao concluir a visita. A ação Registrar observações dos alunos abre as fichas dos alunos da escola e das mediadoras acompanhadas na visita.
+* O PDF consolidado mostra as visitas realizadas e seus registros de alunos vinculados. Os demais registros do período aparecem em uma seção própria, respeitando o perfil e os filtros selecionados.
+* Os registros anteriores recebem a data em que foram cadastrados. Para os novos registros, a escola e a equipe da época do registro são preservadas no relatório.
 
 == 0.10.0 ==
 * Portal independente do tema com layout próprio, login, navegação e manifesto de aplicativo.

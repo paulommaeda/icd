@@ -7,7 +7,7 @@ class ICD_Visitas_Permissions {
   $coord=get_role('icd_coordenador') ?: add_role('icd_coordenador','Coordenador ICD',['read'=>true]);
   if($coord) foreach(['read','icd_visitas_view_dashboard','icd_visitas_manage_visitas','icd_visitas_manage_cadastros','icd_visitas_view_reports','icd_visitas_view_all_students'] as $c)$coord->add_cap($c);
   $ped=get_role('icd_pedagoga') ?: add_role('icd_pedagoga','Pedagoga ICD',['read'=>true]);
-  if($ped) foreach(['read','icd_visitas_view_dashboard','icd_visitas_manage_visitas','icd_visitas_view_reports','icd_visitas_view_team_students'] as $c)$ped->add_cap($c);
+  if($ped) foreach(['read','icd_visitas_view_dashboard','icd_visitas_manage_visitas','icd_visitas_view_reports','icd_visitas_view_team_students','icd_visitas_manage_team_students'] as $c)$ped->add_cap($c);
   $med=get_role('icd_mediador') ?: add_role('icd_mediador','Mediador ICD',['read'=>true]);
   if($med) foreach(['read','icd_visitas_view_dashboard','icd_visitas_view_own_students'] as $c)$med->add_cap($c);
   $direcao=get_role('icd_direcao') ?: add_role('icd_direcao','Direção ICD',['read'=>true]);

@@ -4,6 +4,25 @@ class ICD_Visitas_Helpers {
  public static function id_from($source, $key) {
   return filter_var($source[$key] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 0;
  }
+ public static function valid_date($value) {
+  $value = is_string($value) ? trim(wp_unslash($value)) : '';
+  if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/D', $value, $date) || (int) $date[1] < 1000) return '';
+  return checkdate((int) $date[2], (int) $date[3], (int) $date[1]) ? $value : '';
+ }
+ public static function visit_mediator_map($editing = null, $participants = []) {
+  global $wpdb;
+  $vinculos = ICD_Visitas_Database::table('vinculos');
+  $alunos = ICD_Visitas_Database::table('alunos');
+  $map = [];
+  foreach ($wpdb->get_results("SELECT escola_id, mediador_id FROM $vinculos WHERE ativo = 1
+      UNION SELECT escola_id, mediador_id FROM $alunos") as $row) {
+   $map[(int) $row->mediador_id][] = (int) $row->escola_id;
+  }
+  if ($editing) {
+   foreach ($participants as $mediador_id) $map[$mediador_id][] = (int) $editing->escola_id;
+  }
+  return $map;
+ }
  public static function turno_label($v){ return ['manha'=>'Manhã','tarde'=>'Tarde','noite'=>'Noite','integral'=>'Integral'][$v]??ucfirst($v); }
  public static function status_label($v){ return ['programada'=>'Programada','confirmada'=>'Confirmada','realizada'=>'Realizada','cancelada'=>'Cancelada','reagendada'=>'Reagendada','nao_realizada'=>'Não realizada'][$v]??ucfirst(str_replace('_',' ',$v)); }
  public static function dia_label($n){ return [1=>'Segunda',2=>'Terça',3=>'Quarta',4=>'Quinta',5=>'Sexta',6=>'Sábado',7=>'Domingo'][(int)$n]??''; }

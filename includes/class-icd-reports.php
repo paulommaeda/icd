@@ -1,15 +1,16 @@
 <?php
 if(!defined('ABSPATH')) exit;
 class ICD_Visitas_Reports {
+ private const STUDENT_RECORD_SPACE = 50;
+
  public static function init(){
   ICD_Visitas_Portal::register_action('icd_generate_visits_pdf',[__CLASS__,'generate_pdf']);
   ICD_Visitas_Portal::register_action('icd_generate_visits_pdf_ajax',[__CLASS__,'generate_pdf_ajax'],true);
  }
- private static function valid_date($date,$fallback){ return preg_match('/^\d{4}-\d{2}-\d{2}$/',(string)$date)?$date:$fallback; }
  private static function filters_from_request($source){
   $today=current_time('Y-m-d');
-  $from=self::valid_date(sanitize_text_field($source['from']??''),date('Y-m-01',strtotime($today)));
-  $to=self::valid_date(sanitize_text_field($source['to']??''),$today);
+  $from=ICD_Visitas_Helpers::valid_date($source['from']??'') ?: substr($today,0,7).'-01';
+  $to=ICD_Visitas_Helpers::valid_date($source['to']??'') ?: $today;
   if($from>$to){ $tmp=$from;$from=$to;$to=$tmp; }
   return [
    'from'=>$from,
@@ -35,22 +36,48 @@ class ICD_Visitas_Reports {
   return $wpdb->get_results($wpdb->prepare($sql,...$args));
  }
  private static function build_pdf($filters){
-  $rows=self::query($filters);
-  $subtitle='Período: '.date_i18n('d/m/Y',strtotime($filters['from'])).' a '.date_i18n('d/m/Y',strtotime($filters['to']));
-  $pdf=new ICD_Visitas_PDF(ICD_VISITAS_DIR.'assets/logo-report.jpg',$subtitle);
+  global $wpdb;
+  $rows = self::query($filters);
+  if ($wpdb->last_error) throw new RuntimeException('Falha ao consultar as visitas realizadas.');
+  $linked = array_fill_keys(array_column($rows, 'id'), []);
+  $notes = ICD_Visitas_Students::observations_for_report($filters, array_keys($linked));
+  $other = [];
+  foreach ($notes as $note) {
+   if (isset($linked[$note->visita_id])) $linked[$note->visita_id][] = $note;
+   else $other[] = $note;
+  }
+  $subtitle = 'Período de ' . mysql2date('d/m/Y', $filters['from']) . ' a ' . mysql2date('d/m/Y', $filters['to']);
+  $pdf = new ICD_Visitas_PDF(ICD_VISITAS_DIR.'assets/logo-report.jpg', $subtitle);
   $pdf->addPage();
-  if(!$rows){ $pdf->emptyMessage('Nenhuma visita realizada encontrada para os filtros selecionados.'); }
-  foreach($rows as $r){
+  if (!$rows) $pdf->emptyMessage('Nenhuma visita realizada para os filtros selecionados.');
+  foreach ($rows as $r) {
    $pdf->visitStart();
-   $pdf->field('PEDAGOGA RESPONSÁVEL',$r->pedagogas?:'Não informada');
-   $pdf->field('DATA',date_i18n('d/m/Y',strtotime($r->data_visita)));
-   $pdf->field('ESCOLA',$r->escola);
-   $pdf->field('MEDIADOR(ES)',$r->mediadores?:'Não informados');
-   $pdf->notes($r->observacoes??'');
+   $pdf->field('PEDAGOGA RESPONSÁVEL', $r->pedagogas ?: 'Não informada');
+   $pdf->field('DATA DA VISITA', mysql2date('d/m/Y', $r->data_visita));
+   $pdf->field('ESCOLA', $r->escola);
+   $pdf->field('MEDIADOR(ES)', $r->mediadores ?: 'Não informados');
+   $pdf->notes($r->observacoes ?? '', 'OBSERVAÇÕES DA VISITA');
+   if ($linked[$r->id]) {
+    $pdf->heading('Registros dos alunos nesta visita', self::STUDENT_RECORD_SPACE);
+    foreach ($linked[$r->id] as $note) self::write_student_record($pdf, $note);
+   }
    $pdf->separator();
   }
-  $filename='relatorio-visitas-'.$filters['from'].'-a-'.$filters['to'].'.pdf';
-  return ['filename'=>$filename,'bytes'=>$pdf->output($filename,'S'),'count'=>count($rows)];
+  if ($other) {
+   $pdf->heading('Demais registros dos alunos no período', self::STUDENT_RECORD_SPACE);
+   foreach ($other as $note) self::write_student_record($pdf, $note);
+  }
+  $filename = 'relatorio-visitas-' . $filters['from'] . '-a-' . $filters['to'] . '.pdf';
+  return ['filename'=>$filename, 'bytes'=>$pdf->output($filename, 'S'), 'count'=>count($rows), 'student_count'=>count($notes)];
+ }
+ private static function write_student_record($pdf, $note) {
+  $pdf->ensureSpace(self::STUDENT_RECORD_SPACE);
+  $pdf->field('ALUNO', $note->aluno);
+  $author = $note->autor ?: 'Usuário removido';
+  $pdf->field('DATA E AUTOR', mysql2date('d/m/Y', $note->data_registro) . ' | ' . $author);
+  $pdf->field('ESCOLA E MEDIADORA', ($note->escola ?: 'Escola não informada') . ' | ' . ($note->mediadora ?: 'Mediadora não informada'));
+  $pdf->notes($note->observacao, 'REGISTRO DO ALUNO');
+  $pdf->gap(3);
  }
  private static function can_generate(){ return is_user_logged_in() && current_user_can('icd_visitas_view_reports'); }
  public static function generate_pdf(){
@@ -82,6 +109,7 @@ class ICD_Visitas_Reports {
     'mime'=>'application/pdf',
     'base64'=>base64_encode($built['bytes']),
     'count'=>(int)$built['count'],
+    'student_count'=>(int)$built['student_count'],
    ]);
   }catch(Throwable $e){
    error_log('ICD Visitas PDF AJAX: '.$e->getMessage());

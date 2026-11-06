@@ -1,19 +1,31 @@
 <?php
 if (!defined('ABSPATH')) exit;
 $id = ICD_Visitas_Helpers::id_from($_GET, 'icd_aluno');
-$student = $id ? ICD_Visitas_Students::find($id) : null;
-$base_url = ICD_Visitas_Public::students_url();
+$visit_id = ICD_Visitas_Helpers::id_from($_GET, 'icd_visita');
+$visit_context = $visit_id ? ICD_Visitas_Students::visit_context($visit_id) : null;
+$visit_args = $visit_context ? ['icd_visita' => $visit_id] : [];
+$student = $id && (!$visit_id || $visit_context) ? ICD_Visitas_Students::find($id, $visit_id) : null;
+$base_url = ICD_Visitas_Public::students_url(0, $visit_args);
 $in_admin = false;
 ?>
 <div class="icd-shell icd-students-page">
     <header class="icd-app-header">
         <div class="icd-brand">
             <img src="<?php echo esc_url(ICD_VISITAS_URL . 'assets/logo.svg'); ?>" alt="Instituto Caminho de Davi">
-            <div><small>Acompanhamento pedagógico</small><h2><?php echo esc_html($student ? $student->nome : 'Alunos'); ?></h2></div>
+            <div><small>Acompanhamento pedagógico</small><h2><?php echo esc_html($student ? $student->nome : ($visit_context ? 'Alunos da visita' : 'Alunos')); ?></h2></div>
         </div>
     </header>
+    <?php if ($visit_context): ?>
+        <section class="icd-card icd-student-visit">
+            <strong>Visita realizada · <?php echo esc_html($visit_context->escola); ?></strong>
+            <p><?php echo esc_html(mysql2date('d/m/Y', $visit_context->data_visita)); ?> · Alunos das mediadoras acompanhadas nesta escola.</p>
+            <a href="<?php echo esc_url(ICD_Visitas_Portal::url('agenda')); ?>">Voltar à agenda</a>
+        </section>
+    <?php endif; ?>
     <?php if ($id): ?><p><a href="<?php echo esc_url($base_url); ?>">← Lista de alunos</a></p><?php endif; ?>
-    <?php if ($id && !$student): ?>
+    <?php if ($visit_id && !$visit_context): ?>
+        <p class="icd-card">Visita indisponível para registrar observações.</p>
+    <?php elseif ($id && !$student): ?>
         <p class="icd-card">Aluno indisponível.</p>
     <?php elseif ($student): ?>
         <section class="icd-card icd-student-card">
@@ -24,7 +36,7 @@ $in_admin = false;
                 <dt>Mediadora</dt><dd><?php echo esc_html($student->mediadora ?? 'Não informada'); ?></dd>
                 <dt>Pedagoga</dt><dd><?php echo esc_html($student->pedagoga ?? 'Sem vínculo'); ?></dd>
             </dl>
-            <?php if (current_user_can('icd_visitas_manage_cadastros')): ?>
+            <?php if (!$visit_context && ICD_Visitas_Students::can_manage() && ICD_Visitas_Students::find($id, 0, true)): ?>
                 <a class="icd-edit-btn" href="<?php echo esc_url(ICD_Visitas_Students::admin_url($id) . '#icd-trocar-vinculos'); ?>">Trocar vínculos</a>
             <?php endif; ?>
         </section>
@@ -35,29 +47,30 @@ $in_admin = false;
     <?php else: ?>
         <?php
         $search = sanitize_text_field(wp_unslash($_GET['icd_busca'] ?? ''));
-        $rows = ICD_Visitas_Students::listing($search);
+        $rows = ICD_Visitas_Students::listing($search, $visit_id);
         ?>
         <section class="icd-card">
             <h3>Alunos acompanhados</h3>
-            <?php if (current_user_can('icd_visitas_manage_cadastros')): ?>
-                <p><a href="<?php echo esc_url(ICD_Visitas_Students::admin_url()); ?>">Gerenciar alunos</a></p>
+            <?php if (!$visit_context && ICD_Visitas_Students::can_manage()): ?>
+                <p><a href="<?php echo esc_url(ICD_Visitas_Students::admin_url()); ?>">Cadastrar e distribuir alunos</a></p>
             <?php endif; ?>
-            <?php if (ICD_Visitas_Students::can_view_team()): ?><p><a href="#icd-equipe">Consultar equipe</a></p><?php endif; ?>
+            <?php if (!$visit_context && ICD_Visitas_Students::can_view_team()): ?><p><a href="#icd-equipe">Consultar equipe</a></p><?php endif; ?>
             <form class="icd-mobile-form" method="get" action="<?php echo esc_url($base_url); ?>">
                 <?php ICD_Visitas_Portal::route_input('alunos'); ?>
+                <?php if ($visit_context): ?><input type="hidden" name="icd_visita" value="<?php echo $visit_id; ?>"><?php endif; ?>
                 <label>Nome do aluno<input type="search" name="icd_busca" value="<?php echo esc_attr($search); ?>"></label>
                 <button type="submit" class="icd-submit">Buscar alunos</button>
                 <?php if ($search !== ''): ?><a href="<?php echo esc_url($base_url); ?>">Limpar busca</a><?php endif; ?>
             </form>
             <?php foreach ($rows as $row): ?>
-                <a class="icd-student-row" href="<?php echo esc_url(ICD_Visitas_Public::students_url($row->id)); ?>">
+                <a class="icd-student-row" href="<?php echo esc_url(ICD_Visitas_Public::students_url($row->id, $visit_args)); ?>">
                     <strong><?php echo esc_html($row->nome); ?></strong>
                     <small><?php echo esc_html(($row->escola ?? 'Escola não informada') . ' · ' . ($row->mediadora ?? 'Mediadora não informada')); ?></small>
                 </a>
             <?php endforeach; ?>
             <?php if (!$rows): ?><p class="icd-empty">Nenhum aluno encontrado.</p><?php endif; ?>
         </section>
-        <?php if (ICD_Visitas_Students::can_view_team()): ?>
+        <?php if (!$visit_context && ICD_Visitas_Students::can_view_team()): ?>
             <section class="icd-card" id="icd-equipe">
                 <h3>Equipe</h3>
                 <?php
